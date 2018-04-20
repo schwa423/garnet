@@ -64,6 +64,10 @@ enum ResourceType : uint64_t {
 
   // Animation
   kVariable = 1ul << 34,
+
+  // Drawables
+  kDrawable = 1ul << 35,
+  kShapeDrawable = 1ul << 36,
 };
 
 // Bitwise combination of ResourceTypes.  A subclass hierarchy can be

@@ -20,6 +20,7 @@ class Object {
   ~Object();
 
   // Constructors.
+  Object();
   Object(const Transform& transform, MeshPtr mesh, MaterialPtr material);
   Object(const mat4& transform, MeshPtr mesh, MaterialPtr material);
   Object(const vec3& position, MeshPtr mesh, MaterialPtr material);

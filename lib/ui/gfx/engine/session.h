@@ -124,6 +124,7 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
   // Called internally to initiate teardown.
   void BeginTearDown();
 
+  // TODO(before-submit): "Cmderation"?
   // Cmderation application functions, called by ApplyCommand().
   bool ApplyCreateResourceCmd(::fuchsia::ui::gfx::CreateResourceCmd command);
   bool ApplyReleaseResourceCmd(::fuchsia::ui::gfx::ReleaseResourceCmd command);
@@ -147,6 +148,8 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
       ::fuchsia::ui::gfx::SetViewPropertiesCmd command);
   bool ApplySetHitTestBehaviorCmd(
       ::fuchsia::ui::gfx::SetHitTestBehaviorCmd command);
+  bool ApplyAttachDrawableCmd(::fuchsia::ui::gfx::AttachDrawableCmd command);
+  bool ApplyDetachDrawableCmd(::fuchsia::ui::gfx::DetachDrawableCmd command);
   bool ApplySetCameraCmd(::fuchsia::ui::gfx::SetCameraCmd command);
   bool ApplySetCameraTransformCmd(
       ::fuchsia::ui::gfx::SetCameraTransformCmd command);
@@ -172,6 +175,10 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
   bool ApplySetRendererCmd(::fuchsia::ui::gfx::SetRendererCmd command);
   bool ApplySetRendererParamCmd(
       ::fuchsia::ui::gfx::SetRendererParamCmd command);
+  bool ApplySetDrawableShapeCmd(
+      ::fuchsia::ui::gfx::SetDrawableShapeCmd command);
+  bool ApplySetDrawableMaterialCmd(
+      ::fuchsia::ui::gfx::SetDrawableMaterialCmd command);
   bool ApplySetEventMaskCmd(::fuchsia::ui::gfx::SetEventMaskCmd command);
   bool ApplySetLabelCmd(::fuchsia::ui::gfx::SetLabelCmd command);
   bool ApplySetDisableClippingCmd(
@@ -228,6 +235,8 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
                              ::fuchsia::ui::gfx::LayerStackArgs args);
   bool ApplyCreateLayer(scenic::ResourceId id,
                         ::fuchsia::ui::gfx::LayerArgs args);
+  bool ApplyCreateShapeDrawable(scenic::ResourceId id,
+                                ::fuchsia::ui::gfx::ShapeDrawableArgs args);
   bool ApplyCreateVariable(scenic::ResourceId id,
                            ::fuchsia::ui::gfx::VariableArgs args);
 
@@ -272,6 +281,8 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
                                ::fuchsia::ui::gfx::LayerStackArgs args);
   ResourcePtr CreateLayer(scenic::ResourceId id,
                           ::fuchsia::ui::gfx::LayerArgs args);
+  ResourcePtr CreateShapeDrawable(scenic::ResourceId id,
+                                  ::fuchsia::ui::gfx::ShapeDrawableArgs args);
   ResourcePtr CreateCircle(scenic::ResourceId id, float initial_radius);
   ResourcePtr CreateRectangle(scenic::ResourceId id, float width, float height);
   ResourcePtr CreateRoundedRectangle(scenic::ResourceId id, float width,

@@ -287,6 +287,16 @@ void DumpVisitor::Visit(Camera* r) {
   EndItem();
 }
 
+void DumpVisitor::Visit(Drawable* r) {
+  using escher::operator<<;
+  // TODO(before-submit): consider how to handle subclasses which may have
+  // different properties.  Maybe a DumpProperties() or DebugProperties() method
+  // on Resource that returns a map<string, string>?
+  BeginItem(r->type_name(), r);
+  VisitResource(r);
+  EndItem();
+}
+
 void DumpVisitor::Visit(Renderer* r) {
   BeginItem("Renderer", r);
   if (r->camera()) {

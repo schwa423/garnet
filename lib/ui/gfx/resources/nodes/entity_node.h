@@ -7,6 +7,8 @@
 
 #include "garnet/lib/ui/gfx/resources/nodes/node.h"
 
+#include "garnet/lib/ui/gfx/resources/drawables/drawable.h"
+
 namespace scenic {
 namespace gfx {
 
@@ -17,6 +19,14 @@ class EntityNode final : public Node {
   EntityNode(Session* session, scenic::ResourceId node_id);
 
   void Accept(class ResourceVisitor* visitor) override;
+
+  bool AttachDrawable(DrawablePtr drawable);
+  bool DetachDrawable(const DrawablePtr& drawable);
+
+ private:
+  // TODO(before-submit): document this hack and how it will go away when we
+  // add a "Space ECS".
+  std::set<DrawablePtr> drawables_;
 };
 
 }  // namespace gfx

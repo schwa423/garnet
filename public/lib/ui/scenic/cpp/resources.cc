@@ -229,6 +229,10 @@ void Node::SetHitTestBehavior(
 
 void Node::Detach() { session()->Enqueue(NewDetachCmd(id())); }
 
+void Node::AttachResource(const Drawable& drawable) {
+  session()->Enqueue(NewAttachDrawableCmd(id(), drawable.id()));
+}
+
 ShapeNode::ShapeNode(Session* session) : Node(session) {
   session->Enqueue(NewCreateShapeNodeCmd(id()));
 }
@@ -275,6 +279,16 @@ EntityNode::~EntityNode() = default;
 
 void EntityNode::SetClip(uint32_t clip_id, bool clip_to_self) {
   session()->Enqueue(NewSetClipCmd(id(), clip_id, clip_to_self));
+}
+
+void EntityNode::AttachDrawable(const Drawable& drawable) {
+  FXL_DCHECK(session() == drawable.session());
+  session()->Enqueue(NewAttachDrawableCmd(id(), drawable.id()));
+}
+
+void EntityNode::DetachDrawable(const Drawable& drawable) {
+  FXL_DCHECK(session() == drawable.session());
+  session()->Enqueue(NewDetachDrawableCmd(id(), drawable.id()));
 }
 
 ImportNode::ImportNode(Session* session) : ContainerNode(session) {}
@@ -538,6 +552,22 @@ void DirectionalLight::SetDirection(const float direction[3]) {
 
 void DirectionalLight::SetDirection(uint32_t variable_id) {
   session()->Enqueue(NewSetLightDirectionCmd(id(), variable_id));
+}
+
+Drawable::Drawable(Session* session) : Resource(session) {}
+
+ShapeDrawable::ShapeDrawable(Session* session) : Drawable(session) {
+  session->Enqueue(NewCreateShapeDrawableCmd(id()));
+}
+
+ShapeDrawable::~ShapeDrawable() = default;
+
+void ShapeDrawable::SetShape(uint32_t shape_id) {
+  session()->Enqueue(NewSetDrawableShapeCmd(id(), shape_id));
+}
+
+void ShapeDrawable::SetMaterial(uint32_t material_id) {
+  session()->Enqueue(NewSetDrawableMaterialCmd(id(), material_id));
 }
 
 }  // namespace scenic

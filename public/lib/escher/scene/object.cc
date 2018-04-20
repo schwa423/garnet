@@ -6,6 +6,8 @@
 
 namespace escher {
 
+Object::Object() : transform_(mat4(1)), shape_(Shape(Shape::Type::kNone)) {}
+
 Object::Object(const Transform& transform, MeshPtr mesh, MaterialPtr material)
     : Object(static_cast<mat4>(transform), std::move(mesh),
              std::move(material)) {}

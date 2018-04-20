@@ -211,6 +211,8 @@ class Material final : public Resource {
   FXL_DISALLOW_COPY_AND_ASSIGN(Material);
 };
 
+class Drawable;
+
 // Represents an abstract node resource in a session.
 // This type cannot be instantiated, please see subclasses.
 class Node : public Resource {
@@ -245,6 +247,8 @@ class Node : public Resource {
 
   // Detaches the node from its parent.
   void Detach();
+
+  void AttachResource(const Drawable& drawable);
 
  protected:
   explicit Node(Session* session);
@@ -310,6 +314,8 @@ class ContainerNode : public Node {
 
 // Required by EntityNode::Attach().
 class ViewHolder;
+// Required by EntityNode::Attach/DetachDrawable().
+class Drawable;
 
 // Represents an entity node resource in a session.
 // TODO(MZ-268): Make this class final, and add public move constructor.
@@ -321,6 +327,9 @@ class EntityNode : public ContainerNode {
   void SetClip(uint32_t clip_id, bool clip_to_self);
 
   void Attach(const ViewHolder& view_holder);
+  // TODO(before-submit): also add versions that take drawable_ids?
+  void AttachDrawable(const Drawable& drawable);
+  void DetachDrawable(const Drawable& drawable);
 
  private:
   FXL_DISALLOW_COPY_AND_ASSIGN(EntityNode);
@@ -645,6 +654,35 @@ class DisplayCompositor final : public Resource {
 
  private:
   FXL_DISALLOW_COPY_AND_ASSIGN(DisplayCompositor);
+};
+
+class Drawable : public Resource {
+ protected:
+  explicit Drawable(Session* session);
+};
+
+class ShapeDrawable final : public Drawable {
+ public:
+  explicit ShapeDrawable(Session* session);
+  ShapeDrawable(ShapeDrawable&& moved);
+  ~ShapeDrawable();
+
+  // Sets the shape that the shape node should draw.
+  void SetShape(const Shape& shape) {
+    FXL_DCHECK(session() == shape.session());
+    SetShape(shape.id());
+  }
+  void SetShape(uint32_t shape_id);
+
+  // Sets the material with which to draw the shape.
+  void SetMaterial(const Material& material) {
+    FXL_DCHECK(session() == material.session());
+    SetMaterial(material.id());
+  }
+  void SetMaterial(uint32_t material_id);
+
+ private:
+  FXL_DISALLOW_COPY_AND_ASSIGN(ShapeDrawable);
 };
 
 }  // namespace scenic

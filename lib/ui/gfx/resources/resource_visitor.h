@@ -8,26 +8,34 @@
 namespace scenic {
 namespace gfx {
 
-class Import;
+class Buffer;
+class Drawable;
 class GpuMemory;
 class HostMemory;
 class Image;
 class ImagePipe;
-class Buffer;
+class Import;
+class Material;
 class View;
 class ViewHolder;
+
+// Nodes.
 class EntityNode;
 class OpacityNode;
 class ShapeNode;
-class Scene;
+
+// Shapes.
 class CircleShape;
+class MeshShape;
 class RectangleShape;
 class RoundedRectangleShape;
-class MeshShape;
-class Material;
+
+// Compositor-related.
 class DisplayCompositor;
 class LayerStack;
 class Layer;
+
+// Scene-related.
 class Camera;
 class Renderer;
 class Scene;
@@ -70,6 +78,7 @@ class ResourceVisitor {
   // Scene, camera, lighting.
   virtual void Visit(Scene* r) = 0;
   virtual void Visit(Camera* r) = 0;
+  virtual void Visit(Drawable* r) = 0;
   virtual void Visit(Renderer* r) = 0;
   virtual void Visit(Light* r) = 0;
   virtual void Visit(AmbientLight* r) = 0;

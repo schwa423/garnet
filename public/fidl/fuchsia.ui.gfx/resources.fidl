@@ -50,6 +50,9 @@ union ResourceArgs {
   AmbientLightArgs ambient_light;
   DirectionalLightArgs directional_light;
 
+  // Drawables
+  ShapeDrawableArgs shape_drawable;
+
   // A value that can be used in place of a constant value.
   VariableArgs variable;
 };

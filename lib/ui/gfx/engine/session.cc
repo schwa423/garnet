@@ -20,6 +20,7 @@
 #include "garnet/lib/ui/gfx/resources/compositor/display_compositor.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer_stack.h"
+#include "garnet/lib/ui/gfx/resources/drawables/shape_drawable.h"
 #include "garnet/lib/ui/gfx/resources/gpu_memory.h"
 #include "garnet/lib/ui/gfx/resources/host_memory.h"
 #include "garnet/lib/ui/gfx/resources/image.h"
@@ -137,6 +138,10 @@ bool Session::ApplyCommand(::fuchsia::ui::gfx::Command command) {
     case ::fuchsia::ui::gfx::Command::Tag::kSetHitTestBehavior:
       return ApplySetHitTestBehaviorCmd(
           std::move(command.set_hit_test_behavior()));
+    case ::fuchsia::ui::gfx::Command::Tag::kAttachDrawable:
+      return ApplyAttachDrawableCmd(std::move(command.attach_drawable()));
+    case ::fuchsia::ui::gfx::Command::Tag::kDetachDrawable:
+      return ApplyDetachDrawableCmd(std::move(command.detach_drawable()));
     case ::fuchsia::ui::gfx::Command::Tag::kSetViewProperties:
       return ApplySetViewPropertiesCmd(
           std::move(command.set_view_properties()));
@@ -183,6 +188,11 @@ bool Session::ApplyCommand(::fuchsia::ui::gfx::Command command) {
       return ApplySetRendererCmd(std::move(command.set_renderer()));
     case ::fuchsia::ui::gfx::Command::Tag::kSetRendererParam:
       return ApplySetRendererParamCmd(std::move(command.set_renderer_param()));
+    case ::fuchsia::ui::gfx::Command::Tag::kSetDrawableShape:
+      return ApplySetDrawableShapeCmd(std::move(command.set_drawable_shape()));
+    case ::fuchsia::ui::gfx::Command::Tag::kSetDrawableMaterial:
+      return ApplySetDrawableMaterialCmd(
+          std::move(command.set_drawable_material()));
     case ::fuchsia::ui::gfx::Command::Tag::kSetEventMask:
       return ApplySetEventMaskCmd(std::move(command.set_event_mask()));
     case ::fuchsia::ui::gfx::Command::Tag::kSetLabel:
@@ -267,6 +277,9 @@ bool Session::ApplyCreateResourceCmd(
                                    std::move(command.resource.layer_stack()));
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::kLayer:
       return ApplyCreateLayer(id, std::move(command.resource.layer()));
+    case ::fuchsia::ui::gfx::ResourceArgs::Tag::kShapeDrawable:
+      return ApplyCreateShapeDrawable(
+          id, std::move(command.resource.shape_drawable()));
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::kVariable:
       return ApplyCreateVariable(id, std::move(command.resource.variable()));
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::Invalid:
@@ -500,6 +513,28 @@ bool Session::ApplySetViewPropertiesCmd(
   return false;
 }
 
+bool Session::ApplyAttachDrawableCmd(
+    ::fuchsia::ui::gfx::AttachDrawableCmd command) {
+  if (auto node = resources_.FindResource<EntityNode>(command.node_id)) {
+    if (auto drawable =
+            resources_.FindResource<Drawable>(command.drawable_id)) {
+      return node->AttachDrawable(std::move(drawable));
+    }
+  }
+  return false;
+}
+
+bool Session::ApplyDetachDrawableCmd(
+    ::fuchsia::ui::gfx::DetachDrawableCmd command) {
+  if (auto node = resources_.FindResource<EntityNode>(command.node_id)) {
+    if (auto drawable =
+            resources_.FindResource<Drawable>(command.drawable_id)) {
+      return node->DetachDrawable(std::move(drawable));
+    }
+  }
+  return false;
+}
+
 bool Session::ApplySetCameraCmd(::fuchsia::ui::gfx::SetCameraCmd command) {
   if (auto renderer = resources_.FindResource<Renderer>(command.renderer_id)) {
     if (command.camera_id == 0) {
@@ -639,6 +674,31 @@ bool Session::ApplySetEventMaskCmd(
     ::fuchsia::ui::gfx::SetEventMaskCmd command) {
   if (auto r = resources_.FindResource<Resource>(command.id)) {
     return r->SetEventMask(command.event_mask);
+  }
+  return false;
+}
+
+bool Session::ApplySetDrawableShapeCmd(
+    ::fuchsia::ui::gfx::SetDrawableShapeCmd command) {
+  if (auto drawable =
+          resources_.FindResource<ShapeDrawable>(command.shape_drawable_id)) {
+    if (auto shape = resources_.FindResource<Shape>(command.shape_id)) {
+      drawable->SetShape(std::move(shape));
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Session::ApplySetDrawableMaterialCmd(
+    ::fuchsia::ui::gfx::SetDrawableMaterialCmd command) {
+  if (auto drawable =
+          resources_.FindResource<ShapeDrawable>(command.shape_drawable_id)) {
+    if (auto material =
+            resources_.FindResource<Material>(command.material_id)) {
+      drawable->SetMaterial(std::move(material));
+      return true;
+    }
   }
   return false;
 }
@@ -1030,6 +1090,12 @@ bool Session::ApplyCreateLayer(scenic::ResourceId id,
   return layer ? resources_.AddResource(id, std::move(layer)) : false;
 }
 
+bool Session::ApplyCreateShapeDrawable(
+    scenic::ResourceId id, ::fuchsia::ui::gfx::ShapeDrawableArgs args) {
+  auto drawable = CreateShapeDrawable(id, std::move(args));
+  return drawable ? resources_.AddResource(id, std::move(drawable)) : false;
+}
+
 bool Session::ApplyCreateVariable(scenic::ResourceId id,
                                   ::fuchsia::ui::gfx::VariableArgs args) {
   auto variable = CreateVariable(id, std::move(args));
@@ -1221,6 +1287,11 @@ ResourcePtr Session::CreateVariable(scenic::ResourceId id,
 ResourcePtr Session::CreateLayer(scenic::ResourceId id,
                                  ::fuchsia::ui::gfx::LayerArgs args) {
   return fxl::MakeRefCounted<Layer>(this, id);
+}
+
+ResourcePtr Session::CreateShapeDrawable(
+    scenic::ResourceId id, ::fuchsia::ui::gfx::ShapeDrawableArgs args) {
+  return fxl::MakeRefCounted<ShapeDrawable>(this, id);
 }
 
 ResourcePtr Session::CreateCircle(scenic::ResourceId id, float initial_radius) {

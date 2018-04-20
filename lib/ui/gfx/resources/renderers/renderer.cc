@@ -231,6 +231,16 @@ void Renderer::Visitor::Visit(Camera* r) {
   Visit(r->scene().get());
 }
 
+void Renderer::Visitor::Visit(Drawable* r) {
+  FXL_DCHECK(false) << "need transform";
+  auto transform = escher::mat4();
+
+  auto obj = r->GenerateRenderObject(transform, opacity_);
+  if (obj.shape().type() != escher::Shape::Type::kNone) {
+    display_list_.push_back(std::move(obj));
+  }
+}
+
 void Renderer::Visitor::Visit(Renderer* r) { FXL_CHECK(false); }
 
 void Renderer::Visitor::Visit(Light* r) { FXL_CHECK(false); }

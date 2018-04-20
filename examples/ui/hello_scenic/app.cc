@@ -141,12 +141,17 @@ void App::CreateExampleScene(float display_width, float display_height) {
   root_node.AddChild(pane_node_1);
 
   EntityNode pane_node_2(session);
-  ShapeNode pane_bg_2(session);
-  pane_bg_2.SetShape(pane_shape);
-  pane_bg_2.SetMaterial(pane_material);
+  EntityNode pane_bg_2(session);
+
   pane_node_2.AddPart(pane_bg_2);
   pane_node_2.SetTranslation(kPaneMargin * 2 + pane_width * 1.5,
                              kPaneMargin + pane_height * 0.5, 20);
+
+  ShapeDrawable kaboom(session);
+  kaboom.SetShape(pane_shape);
+  kaboom.SetMaterial(pane_material);
+  pane_node_2.AttachResource(kaboom);
+
   pane_node_2.SetClip(0, true);
   root_node.AddChild(pane_node_2);
 

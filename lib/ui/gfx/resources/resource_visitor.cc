@@ -10,6 +10,7 @@
 #include "garnet/lib/ui/gfx/resources/compositor/display_compositor.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer_stack.h"
+#include "garnet/lib/ui/gfx/resources/drawables/drawable.h"
 #include "garnet/lib/ui/gfx/resources/gpu_image.h"
 #include "garnet/lib/ui/gfx/resources/gpu_memory.h"
 #include "garnet/lib/ui/gfx/resources/host_image.h"
@@ -92,6 +93,8 @@ void AmbientLight::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 void DirectionalLight::Accept(ResourceVisitor* visitor) {
   visitor->Visit(this);
 }
+
+void Drawable::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 
 void Import::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 

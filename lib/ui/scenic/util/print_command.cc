@@ -56,6 +56,10 @@ std::ostream& operator<<(std::ostream& stream,
       return stream << "SetHitTestBehavior";
     case Command::Tag::kSetViewProperties:
       return stream << "SetViewProperties";
+    case Command::Tag::kAttachDrawable:
+      return stream << "AttachDrawable";
+    case Command::Tag::kDetachDrawable:
+      return stream << "DetachDrawable";
     case Command::Tag::kSetCamera:
       return stream << "SetCamera";
     case Command::Tag::kSetCameraTransform:
@@ -94,6 +98,10 @@ std::ostream& operator<<(std::ostream& stream,
       return stream << "SetRenderer";
     case Command::Tag::kSetRendererParam:
       return stream << command.set_renderer_param();
+    case Command::Tag::kSetDrawableShape:
+      return stream << "SetDrawableShape";
+    case Command::Tag::kSetDrawableMaterial:
+      return stream << "SetDrawableMaterial";
     case Command::Tag::kSetEventMask:
       return stream << "SetEventMask";
     case Command::Tag::kSetLabel:
@@ -183,6 +191,9 @@ std::ostream& operator<<(std::ostream& stream,
       break;
     case ResourceArgs::Tag::kLayer:
       stream << "Layer";
+      break;
+    case ResourceArgs::Tag::kShapeDrawable:
+      stream << "ShapeDrawable";
       break;
     case ResourceArgs::Tag::kVariable:
       stream << "Variable";

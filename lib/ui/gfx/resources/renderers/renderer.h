@@ -14,6 +14,7 @@ namespace scenic {
 namespace gfx {
 
 class Camera;
+class Drawable;
 class Node;
 class Scene;
 using CameraPtr = fxl::RefPtr<Camera>;
@@ -81,6 +82,7 @@ class Renderer : public Resource {
     void Visit(Layer* r) override;
     void Visit(Scene* r) override;
     void Visit(Camera* r) override;
+    void Visit(Drawable* r) override;
     void Visit(Renderer* r) override;
     void Visit(Light* r) override;
     void Visit(AmbientLight* r) override;

@@ -368,6 +368,15 @@ fuchsia::ui::gfx::Command NewCreateShapeNodeCmd(uint32_t id) {
   return NewCreateResourceCmd(id, std::move(resource));
 }
 
+fuchsia::ui::gfx::Command NewCreateShapeDrawableCmd(uint32_t id) {
+  fuchsia::ui::gfx::ShapeDrawableArgs drawable;
+
+  fuchsia::ui::gfx::ResourceArgs resource;
+  resource.set_shape_drawable(std::move(drawable));
+
+  return NewCreateResourceCmd(id, std::move(resource));
+}
+
 fuchsia::ui::gfx::Command NewCreateViewCmd(uint32_t id, zx::eventpair token,
                                            const std::string& debug_name) {
   FXL_DCHECK(token);
@@ -744,6 +753,30 @@ fuchsia::ui::gfx::Command NewSetHitTestBehaviorCmd(
   return command;
 }
 
+fuchsia::ui::gfx::Command NewAttachDrawableCmd(uint32_t node_id,
+                                               uint32_t drawable_id) {
+  fuchsia::ui::gfx::AttachDrawableCmd attach;
+  attach.node_id = node_id;
+  attach.drawable_id = drawable_id;
+
+  fuchsia::ui::gfx::Command command;
+  command.set_attach_drawable(std::move(attach));
+
+  return command;
+}
+
+fuchsia::ui::gfx::Command NewDetachDrawableCmd(uint32_t node_id,
+                                               uint32_t drawable_id) {
+  fuchsia::ui::gfx::DetachDrawableCmd detach;
+  detach.node_id = node_id;
+  detach.drawable_id = drawable_id;
+
+  fuchsia::ui::gfx::Command command;
+  command.set_detach_drawable(std::move(detach));
+
+  return command;
+}
+
 fuchsia::ui::gfx::Command NewSetCameraCmd(uint32_t renderer_id,
                                           uint32_t camera_id) {
   fuchsia::ui::gfx::SetCameraCmd set_camera;
@@ -1040,6 +1073,30 @@ fuchsia::ui::gfx::Command NewDetachLightsCmd(uint32_t scene_id) {
 
   fuchsia::ui::gfx::Command command;
   command.set_detach_lights(std::move(detach_lights_command));
+
+  return command;
+}
+
+fuchsia::ui::gfx::Command NewSetDrawableShapeCmd(uint32_t shape_drawable_id,
+                                                 uint32_t shape_id) {
+  fuchsia::ui::gfx::SetDrawableShapeCmd set_drawable;
+  set_drawable.shape_drawable_id = shape_drawable_id;
+  set_drawable.shape_id = shape_id;
+
+  fuchsia::ui::gfx::Command command;
+  command.set_set_drawable_shape(std::move(set_drawable));
+
+  return command;
+}
+
+fuchsia::ui::gfx::Command NewSetDrawableMaterialCmd(uint32_t shape_drawable_id,
+                                                    uint32_t material_id) {
+  fuchsia::ui::gfx::SetDrawableMaterialCmd set_drawable;
+  set_drawable.shape_drawable_id = shape_drawable_id;
+  set_drawable.material_id = material_id;
+
+  fuchsia::ui::gfx::Command command;
+  command.set_set_drawable_material(std::move(set_drawable));
 
   return command;
 }

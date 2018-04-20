@@ -80,6 +80,7 @@ fuchsia::ui::gfx::Command NewCreateClipNodeCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateEntityNodeCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateOpacityNodeCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateShapeNodeCmd(uint32_t id);
+fuchsia::ui::gfx::Command NewCreateShapeDrawableCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateViewCmd(uint32_t id, zx::eventpair token,
                                            const std::string& debug_name);
 fuchsia::ui::gfx::Command NewCreateViewHolderCmd(uint32_t id,
@@ -147,6 +148,10 @@ fuchsia::ui::gfx::Command NewSetClipCmd(uint32_t node_id, uint32_t clip_id,
 fuchsia::ui::gfx::Command NewSetTagCmd(uint32_t node_id, uint32_t tag_value);
 fuchsia::ui::gfx::Command NewSetHitTestBehaviorCmd(
     uint32_t node_id, fuchsia::ui::gfx::HitTestBehavior hit_test_behavior);
+fuchsia::ui::gfx::Command NewAttachDrawableCmd(uint32_t node_id,
+                                               uint32_t drawable_id);
+fuchsia::ui::gfx::Command NewDetachDrawableCmd(uint32_t node_id,
+                                               uint32_t drawable_id);
 
 // Camera and lighting operations.
 
@@ -214,6 +219,12 @@ fuchsia::ui::gfx::Command NewSetRendererCmd(uint32_t layer_id,
 fuchsia::ui::gfx::Command NewSetRendererParamCmd(
     uint32_t renderer_id, fuchsia::ui::gfx::RendererParam param);
 fuchsia::ui::gfx::Command NewSetSizeCmd(uint32_t node_id, const float size[2]);
+
+// Drawable operations.
+fuchsia::ui::gfx::Command NewSetDrawableShapeCmd(uint32_t shape_drawable_id,
+                                                 uint32_t shape_id);
+fuchsia::ui::gfx::Command NewSetDrawableMaterialCmd(uint32_t shape_drawable_id,
+                                                    uint32_t material_id);
 
 // Event operations.
 fuchsia::ui::gfx::Command NewSetEventMaskCmd(uint32_t resource_id,

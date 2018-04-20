@@ -10,6 +10,7 @@ fidl("fuchsia.ui.gfx") {
   sources = [
     "commands.fidl",
     "display_info.fidl",
+    "drawables.fidl",
     "events.fidl",
     "hit.fidl",
     "nodes.fidl",
