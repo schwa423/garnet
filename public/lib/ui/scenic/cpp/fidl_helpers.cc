@@ -765,11 +765,9 @@ fuchsia::ui::gfx::Command NewAttachDrawableCmd(uint32_t node_id,
   return command;
 }
 
-fuchsia::ui::gfx::Command NewDetachDrawableCmd(uint32_t node_id,
-                                               uint32_t drawable_id) {
+fuchsia::ui::gfx::Command NewDetachDrawableCmd(uint32_t node_id) {
   fuchsia::ui::gfx::DetachDrawableCmd detach;
   detach.node_id = node_id;
-  detach.drawable_id = drawable_id;
 
   fuchsia::ui::gfx::Command command;
   command.set_detach_drawable(std::move(detach));

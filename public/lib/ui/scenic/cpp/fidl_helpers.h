@@ -150,8 +150,7 @@ fuchsia::ui::gfx::Command NewSetHitTestBehaviorCmd(
     uint32_t node_id, fuchsia::ui::gfx::HitTestBehavior hit_test_behavior);
 fuchsia::ui::gfx::Command NewAttachDrawableCmd(uint32_t node_id,
                                                uint32_t drawable_id);
-fuchsia::ui::gfx::Command NewDetachDrawableCmd(uint32_t node_id,
-                                               uint32_t drawable_id);
+fuchsia::ui::gfx::Command NewDetachDrawableCmd(uint32_t node_id);
 
 // Camera and lighting operations.
 

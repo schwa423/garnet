@@ -248,8 +248,6 @@ class Node : public Resource {
   // Detaches the node from its parent.
   void Detach();
 
-  void AttachResource(const Drawable& drawable);
-
  protected:
   explicit Node(Session* session);
   Node(Node&& moved);
@@ -329,7 +327,7 @@ class EntityNode : public ContainerNode {
   void Attach(const ViewHolder& view_holder);
   // TODO(before-submit): also add versions that take drawable_ids?
   void AttachDrawable(const Drawable& drawable);
-  void DetachDrawable(const Drawable& drawable);
+  void DetachDrawable();
 
  private:
   FXL_DISALLOW_COPY_AND_ASSIGN(EntityNode);

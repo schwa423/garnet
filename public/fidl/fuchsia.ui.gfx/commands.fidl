@@ -369,7 +369,6 @@ struct AttachDrawableCmd {
 
 struct DetachDrawableCmd {
   uint32 node_id;  // must be EntityNode
-  uint32 drawable_id;
 };
 
 // Sets the properties for a ViewHolder's attached View.

@@ -229,10 +229,6 @@ void Node::SetHitTestBehavior(
 
 void Node::Detach() { session()->Enqueue(NewDetachCmd(id())); }
 
-void Node::AttachResource(const Drawable& drawable) {
-  session()->Enqueue(NewAttachDrawableCmd(id(), drawable.id()));
-}
-
 ShapeNode::ShapeNode(Session* session) : Node(session) {
   session->Enqueue(NewCreateShapeNodeCmd(id()));
 }
@@ -286,9 +282,8 @@ void EntityNode::AttachDrawable(const Drawable& drawable) {
   session()->Enqueue(NewAttachDrawableCmd(id(), drawable.id()));
 }
 
-void EntityNode::DetachDrawable(const Drawable& drawable) {
-  FXL_DCHECK(session() == drawable.session());
-  session()->Enqueue(NewDetachDrawableCmd(id(), drawable.id()));
+void EntityNode::DetachDrawable() {
+  session()->Enqueue(NewDetachDrawableCmd(id()));
 }
 
 ImportNode::ImportNode(Session* session) : ContainerNode(session) {}

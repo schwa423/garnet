@@ -146,11 +146,10 @@ void App::CreateExampleScene(float display_width, float display_height) {
   pane_node_2.AddPart(pane_bg_2);
   pane_node_2.SetTranslation(kPaneMargin * 2 + pane_width * 1.5,
                              kPaneMargin + pane_height * 0.5, 20);
-
   ShapeDrawable kaboom(session);
   kaboom.SetShape(pane_shape);
   kaboom.SetMaterial(pane_material);
-  pane_node_2.AttachResource(kaboom);
+  pane_node_2.AttachDrawable(kaboom);
 
   pane_node_2.SetClip(0, true);
   root_node.AddChild(pane_node_2);

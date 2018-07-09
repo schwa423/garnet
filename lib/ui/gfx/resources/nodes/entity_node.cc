@@ -13,15 +13,11 @@ const ResourceTypeInfo EntityNode::kTypeInfo = {
 EntityNode::EntityNode(Session* session, scenic::ResourceId node_id)
     : Node(session, node_id, EntityNode::kTypeInfo) {}
 
-bool EntityNode::AttachDrawable(DrawablePtr drawable) {
-  drawables_.insert(std::move(drawable));
-  return true;
+void EntityNode::AttachDrawable(DrawablePtr drawable) {
+  drawable_ = std::move(drawable);
 }
 
-bool EntityNode::DetachDrawable(const DrawablePtr& drawable) {
-  error_reporter()->ERROR() << "DetachDrawable not implemented.";
-  return false;
-}
+void EntityNode::DetachDrawable() { drawable_ = nullptr; }
 
 }  // namespace gfx
 }  // namespace scenic

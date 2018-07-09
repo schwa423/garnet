@@ -55,7 +55,8 @@ class DisplaySwapchain : public Swapchain {
     uint64_t render_finished_event_id;
     EventTimestamper::Watch render_finished_watch;
 
-    bool presented = false;
+    uint64_t frame_presented_event_id;
+    EventTimestamper::Watch frame_presented_watch;
   };
   std::unique_ptr<FrameRecord> NewFrameRecord(
       const FrameTimingsPtr& frame_timings);
@@ -65,8 +66,7 @@ class DisplaySwapchain : public Swapchain {
   // When a frame is presented, the previously-presented frame becomes available
   // as a render target.
   void OnFrameRendered(size_t frame_index, zx_time_t render_finished_time);
-
-  void OnVsync(zx_time_t timestamp, const std::vector<uint64_t>& image_ids);
+  void OnFramePresented(size_t frame_index, zx_time_t vsync_time);
 
   DisplayManager* display_manager_;
   Display* const display_;
@@ -78,8 +78,6 @@ class DisplaySwapchain : public Swapchain {
   const escher::VulkanDeviceQueues::ProcAddrs& vulkan_proc_addresses_;
 
   size_t next_frame_index_ = 0;
-  size_t presented_frame_idx_ = 0;
-  size_t outstanding_frame_count_ = 0;
   EventTimestamper* const timestamper_;
 
   std::vector<Framebuffer> swapchain_buffers_;

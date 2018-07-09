@@ -20,13 +20,13 @@ class EntityNode final : public Node {
 
   void Accept(class ResourceVisitor* visitor) override;
 
-  bool AttachDrawable(DrawablePtr drawable);
-  bool DetachDrawable(const DrawablePtr& drawable);
+  void AttachDrawable(DrawablePtr drawable);
+  void DetachDrawable();
+
+  const DrawablePtr& drawable() const { return drawable_; }
 
  private:
-  // TODO(before-submit): document this hack and how it will go away when we
-  // add a "Space ECS".
-  std::set<DrawablePtr> drawables_;
+  DrawablePtr drawable_;
 };
 
 }  // namespace gfx

@@ -139,17 +139,20 @@ void Renderer::Visitor::VisitNode(Node* r) {
   // escher::Objects corresponding to these ShapeNodes.
   const escher::MaterialPtr kNoMaterial;
   Renderer::Visitor clipper_visitor(kNoMaterial, opacity_, disable_clipping_);
-  ForEachPartFrontToBack(*r, [&clipper_visitor](Node* node) {
-    if (node->IsKindOf<ShapeNode>()) {
-      node->Accept(&clipper_visitor);
-    } else {
-      // TODO(MZ-167): accept non-ShapeNode parts.  This might already work
-      // (i.e. it might be as simple as saying
-      // "part->Accept(&part_visitor)"), but this hasn't been tested.
-      FXL_LOG(WARNING) << "Renderer::Visitor::VisitNode(): Clipping only "
-                          "supports ShapeNode parts.";
-    }
-  });
+  fit::function<void(Node*)> clipper_recursion =
+      [&clipper_visitor, &clipper_recursion](Node* node) {
+        if (node->IsKindOf<EntityNode>()) {
+          if (auto& drawable = static_cast<EntityNode*>(node)->drawable()) {
+            drawable->Accept(&clipper_visitor);
+          }
+        } else if (node->IsKindOf<ShapeNode>()) {
+          node->Accept(&clipper_visitor);
+        }
+
+        ForEachDirectDescendantFrontToBack(node, clipper_recursion);
+      };
+
+  ForEachPartFrontToBack(*r, clipper_visitor);
 
   // Check whether there are any clippers.
   auto clippers = clipper_visitor.TakeDisplayList();
