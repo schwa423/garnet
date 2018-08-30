@@ -13,10 +13,8 @@
 namespace scenic {
 namespace gfx {
 
-class Camera;
 class Node;
 class Scene;
-using CameraPtr = fxl::RefPtr<Camera>;
 using ScenePtr = fxl::RefPtr<Scene>;
 
 // Placeholder Renderer. Doesn't deal with framerate, framebuffer, etc. yet.
@@ -37,10 +35,6 @@ class Renderer : public Resource {
   // |Resource|
   void Accept(class ResourceVisitor* visitor) override;
 
-  // Nothing will be rendered unless a camera has been set, and the camera
-  // points at a scene.
-  void SetCamera(CameraPtr camera);
-
   // Set the shadow algorithm that the |Renderer| should use when lighting
   // the scene.
   bool SetShadowTechnique(::fuchsia::ui::gfx::ShadowTechnique technique);
@@ -49,8 +43,6 @@ class Renderer : public Resource {
 
   // Set whether clipping is disabled; false by default.
   void DisableClipping(bool disable_clipping);
-
-  Camera* camera() const { return camera_.get(); }
 
   ::fuchsia::ui::gfx::ShadowTechnique shadow_technique() const {
     return shadow_technique_;
@@ -80,6 +72,7 @@ class Renderer : public Resource {
     void Visit(DisplayCompositor* r) override;
     void Visit(LayerStack* r) override;
     void Visit(Layer* r) override;
+    void Visit(SceneLayer* r) override;
     void Visit(Scene* r) override;
     void Visit(Camera* r) override;
     void Visit(Renderer* r) override;
@@ -104,7 +97,6 @@ class Renderer : public Resource {
     const bool disable_clipping_;
   };
 
-  CameraPtr camera_;
   escher::MaterialPtr default_material_;
   ::fuchsia::ui::gfx::ShadowTechnique shadow_technique_ =
       ::fuchsia::ui::gfx::ShadowTechnique::SCREEN_SPACE;

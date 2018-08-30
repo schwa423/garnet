@@ -25,11 +25,9 @@
 #include "lib/escher/forward_declarations.h"
 #include "lib/fostr/fidl/fuchsia/ui/scenic/formatting.h"
 #include "lib/fxl/logging.h"
-#include "lib/fxl/logging.h"
 #include "lib/gtest/test_loop_fixture.h"
 #include "lib/ui/input/cpp/formatting.h"
 #include "lib/ui/scenic/cpp/commands.h"
-
 
 // The test setup here is sufficiently different from hittest_unittest.cc to
 // merit its own file.  We access the global hit test through the compositor,
@@ -115,23 +113,24 @@ TEST_F(MultiSessionHitTestTest, GlobalHits) {
   {
     const uint32_t kCompositorId = 1001;
     const uint32_t kLayerStackId = 1002;
-    const uint32_t kLayerId = 1003;
+    const uint32_t kSceneLayerId = 1003;
     s_r.Apply(scenic::NewCreateCompositorCmd(kCompositorId));
     s_r.Apply(scenic::NewCreateLayerStackCmd(kLayerStackId));
     s_r.Apply(scenic::NewSetLayerStackCmd(kCompositorId, kLayerStackId));
-    s_r.Apply(scenic::NewCreateLayerCmd(kLayerId));
+    s_r.Apply(scenic::NewCreateSceneLayerCmd(kSceneLayerId));
     s_r.Apply(scenic::NewSetSizeCmd(
-        kLayerId, (float[2]){/*px-width*/ 8, /*px-height*/ 8}));
-    s_r.Apply(scenic::NewAddLayerCmd(kLayerStackId, kLayerId));
+        kSceneLayerId, (float[2]){/*px-width*/ 8, /*px-height*/ 8}));
+    s_r.Apply(scenic::NewAddLayerCmd(kLayerStackId, kSceneLayerId));
 
     const uint32_t kSceneId = 1004;  // Hit
     const uint32_t kCameraId = 1005;
     const uint32_t kRendererId = 1006;
     s_r.Apply(scenic::NewCreateSceneCmd(kSceneId));
-    s_r.Apply(scenic::NewCreateCameraCmd(kCameraId, kSceneId));
+    s_r.Apply(scenic::NewCreateCameraCmd(kCameraId));
     s_r.Apply(scenic::NewCreateRendererCmd(kRendererId));
-    s_r.Apply(scenic::NewSetCameraCmd(kRendererId, kCameraId));
-    s_r.Apply(scenic::NewSetRendererCmd(kLayerId, kRendererId));
+    s_r.Apply(scenic::NewSetSceneCmd(kSceneLayerId, kSceneId));
+    s_r.Apply(scenic::NewSetCameraCmd(kSceneLayerId, kCameraId));
+    s_r.Apply(scenic::NewSetRendererCmd(kSceneLayerId, kRendererId));
 
     // TODO(SCN-885) - Adjust hit count; an EntityNode shouldn't be hit.
     const uint32_t kRootNodeId = 1007;  // Hit

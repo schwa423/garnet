@@ -11,12 +11,12 @@ namespace gfx {
 
 const ResourceTypeInfo Camera::kTypeInfo = {ResourceType::kCamera, "Camera"};
 
-Camera::Camera(Session* session, scenic::ResourceId id, ScenePtr scene)
-    : Resource(session, id, Camera::kTypeInfo), scene_(std::move(scene)) {}
+Camera::Camera(Session* session, scenic::ResourceId id)
+    : Resource(session, id, Camera::kTypeInfo) {}
 
-Camera::Camera(Session* session, scenic::ResourceId id, ScenePtr scene,
+Camera::Camera(Session* session, scenic::ResourceId id,
                const ResourceTypeInfo& type_info)
-    : Resource(session, id, type_info), scene_(std::move(scene)) {}
+    : Resource(session, id, type_info) {}
 
 void Camera::SetTransform(const glm::vec3& eye_position,
                           const glm::vec3& eye_look_at,
@@ -54,6 +54,7 @@ escher::Camera Camera::GetEscherCamera(
   return camera;
 }
 
+// TODO(before-submit): need to pass Scene into method.
 std::pair<escher::ray4, escher::mat4> Camera::ProjectRayIntoScene(
     const escher::ray4& ray,
     const escher::ViewingVolume& viewing_volume) const {
@@ -79,8 +80,11 @@ std::pair<escher::ray4, escher::mat4> Camera::ProjectRayIntoScene(
   // https://stackoverflow.com/questions/2093096/implementing-ray-picking
   auto inverse_vp =
       glm::inverse(device_transform * camera.projection() * camera.transform());
-  auto inverse_scene_transform =
-      glm::inverse(static_cast<escher::mat4>(scene()->transform()));
+
+  // TODO(before-submit): hack: we assume that transform is identity.
+  escher::mat4 inverse_scene_transform(1);
+  // auto inverse_scene_transform =
+  //    glm::inverse(static_cast<escher::mat4>(scene()->transform()));
 
   return {inverse_scene_transform * inverse_vp * ray,
           inverse_scene_transform * inverse_vp};

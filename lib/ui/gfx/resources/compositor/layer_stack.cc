@@ -10,11 +10,11 @@
 namespace scenic {
 namespace gfx {
 
-const ResourceTypeInfo LayerStack::kTypeInfo = {ResourceType::kLayerStack,
-                                                "LayerStack"};
+const ResourceTypeInfo LayerStack::kTypeInfo = {
+    ResourceType::kLayer | ResourceType::kLayerStack, "LayerStack"};
 
 LayerStack::LayerStack(Session* session, scenic::ResourceId id)
-    : Resource(session, id, LayerStack::kTypeInfo) {}
+    : Layer(session, id, LayerStack::kTypeInfo) {}
 
 LayerStack::~LayerStack() = default;
 
@@ -68,6 +68,18 @@ void LayerStack::RemoveLayer(Layer* layer) {
   FXL_DCHECK(it != layers_.end());
   layers_.erase(it);
   (*it)->layer_stack_ = nullptr;
+}
+
+void LayerStack::CollectScenes(std::set<Scene*>* scenes_out) {
+  for (auto& layer : layers_) {
+    layer->CollectScenes(scenes_out);
+  }
+}
+
+void LayerStack::GetDrawableLayers(std::vector<SceneLayer*>* layers_out) {
+  for (auto& layer : layers_) {
+    layer->GetDrawableLayers(layers_out);
+  }
 }
 
 }  // namespace gfx

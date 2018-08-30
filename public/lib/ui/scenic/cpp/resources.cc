@@ -12,12 +12,12 @@
 namespace scenic {
 namespace {
 
-template<class T>
+template <class T>
 constexpr const T& clamp(const T& v, const T& lo, const T& hi) {
-    return (v < lo) ? lo : (hi < v) ? hi : v;
+  return (v < lo) ? lo : (hi < v) ? hi : v;
 }
 
-} // namespace
+}  // namespace
 
 Resource::Resource(Session* session)
     : session_(session), id_(session->AllocResourceId()) {}
@@ -390,10 +390,8 @@ void CameraBase::SetPoseBuffer(const Buffer& buffer, uint32_t num_entries,
                                                base_time, time_interval));
 }
 
-Camera::Camera(const Scene& scene) : Camera(scene.session(), scene.id()) {}
-
-Camera::Camera(Session* session, uint32_t scene_id) : CameraBase(session) {
-  session->Enqueue(NewCreateCameraCmd(id(), scene_id));
+Camera::Camera(Session* session) : CameraBase(session) {
+  session->Enqueue(NewCreateCameraCmd(id()));
 }
 
 Camera::Camera(Camera&& moved) : CameraBase(std::move(moved)) {}
@@ -404,12 +402,8 @@ void Camera::SetProjection(const float fovy) {
   session()->Enqueue(NewSetCameraProjectionCmd(id(), fovy));
 }
 
-StereoCamera::StereoCamera(const Scene& scene)
-    : StereoCamera(scene.session(), scene.id()) {}
-
-StereoCamera::StereoCamera(Session* session, uint32_t scene_id)
-    : CameraBase(session) {
-  session->Enqueue(NewCreateStereoCameraCmd(id(), scene_id));
+StereoCamera::StereoCamera(Session* session) : CameraBase(session) {
+  session->Enqueue(NewCreateStereoCameraCmd(id()));
 }
 
 StereoCamera::StereoCamera(StereoCamera&& moved)
@@ -449,27 +443,41 @@ void Renderer::SetDisableClipping(bool disable_clipping) {
   session()->Enqueue(NewSetDisableClippingCmd(id(), disable_clipping));
 }
 
-Layer::Layer(Session* session) : Resource(session) {
-  session->Enqueue(NewCreateLayerCmd(id()));
-}
+Layer::Layer(Session* session) : Resource(session) {}
 
 Layer::Layer(Layer&& moved) : Resource(std::move(moved)) {}
 
 Layer::~Layer() = default;
 
-void Layer::SetRenderer(uint32_t renderer_id) {
+SceneLayer::SceneLayer(Session* session) : Layer(session) {
+  session->Enqueue(NewCreateSceneLayerCmd(id()));
+}
+
+SceneLayer::SceneLayer(SceneLayer&& moved) : Layer(std::move(moved)) {}
+
+SceneLayer::~SceneLayer() = default;
+
+void SceneLayer::SetCamera(uint32_t camera_id) {
+  session()->Enqueue(NewSetCameraCmd(id(), camera_id));
+}
+
+void SceneLayer::SetScene(uint32_t scene_id) {
+  session()->Enqueue(NewSetSceneCmd(id(), scene_id));
+}
+
+void SceneLayer::SetRenderer(uint32_t renderer_id) {
   session()->Enqueue(NewSetRendererCmd(id(), renderer_id));
 }
 
-void Layer::SetSize(const float size[2]) {
+void SceneLayer::SetSize(const float size[2]) {
   session()->Enqueue(NewSetSizeCmd(id(), size));
 }
 
-LayerStack::LayerStack(Session* session) : Resource(session) {
+LayerStack::LayerStack(Session* session) : Layer(session) {
   session->Enqueue(NewCreateLayerStackCmd(id()));
 }
 
-LayerStack::LayerStack(LayerStack&& moved) : Resource(std::move(moved)) {}
+LayerStack::LayerStack(LayerStack&& moved) : Layer(std::move(moved)) {}
 
 LayerStack::~LayerStack() = default;
 
@@ -485,18 +493,24 @@ void LayerStack::RemoveAllLayers() {
   session()->Enqueue(NewRemoveAllLayersCmd(id()));
 }
 
-DisplayCompositor::DisplayCompositor(Session* session) : Resource(session) {
+Compositor::Compositor(Session* session) : Resource(session) {}
+
+Compositor::Compositor(Compositor&& moved) : Resource(std::move(moved)) {}
+
+Compositor::~Compositor() = default;
+
+void Compositor::SetLayerStack(uint32_t layer_stack_id) {
+  session()->Enqueue(NewSetLayerStackCmd(id(), layer_stack_id));
+}
+
+DisplayCompositor::DisplayCompositor(Session* session) : Compositor(session) {
   session->Enqueue(NewCreateDisplayCompositorCmd(id()));
 }
 
 DisplayCompositor::DisplayCompositor(DisplayCompositor&& moved)
-    : Resource(std::move(moved)) {}
+    : Compositor(std::move(moved)) {}
 
 DisplayCompositor::~DisplayCompositor() = default;
-
-void DisplayCompositor::SetLayerStack(uint32_t layer_stack_id) {
-  session()->Enqueue(NewSetLayerStackCmd(id(), layer_stack_id));
-}
 
 Light::Light(Session* session) : Resource(session) {}
 

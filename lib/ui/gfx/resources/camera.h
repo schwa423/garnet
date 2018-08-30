@@ -19,13 +19,11 @@ class Camera : public Resource {
  public:
   static const ResourceTypeInfo kTypeInfo;
 
-  Camera(Session* session, scenic::ResourceId id, ScenePtr scene);
+  Camera(Session* session, scenic::ResourceId id);
   virtual ~Camera() {}
 
   // |Resource|.
   void Accept(class ResourceVisitor* visitor) override;
-
-  const ScenePtr& scene() const { return scene_; }
 
   void SetTransform(const glm::vec3& eye_position, const glm::vec3& eye_look_at,
                     const glm::vec3& eye_up);
@@ -55,10 +53,8 @@ class Camera : public Resource {
 
  protected:
   // Note: StereoCamera subclasses Camera and provides its own ResourceTypeInfo.
-  Camera(Session* session, scenic::ResourceId id, ScenePtr scene,
+  Camera(Session* session, scenic::ResourceId id,
          const ResourceTypeInfo& type_info);
-
-  ScenePtr scene_;
 
   glm::vec3 eye_position_ = glm::vec3();
   glm::vec3 eye_look_at_ = glm::vec3();

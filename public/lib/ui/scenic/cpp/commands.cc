@@ -127,11 +127,11 @@ fuchsia::ui::gfx::Command NewCreateLayerStackCmd(uint32_t id) {
   return NewCreateResourceCmd(id, std::move(resource));
 }
 
-fuchsia::ui::gfx::Command NewCreateLayerCmd(uint32_t id) {
-  fuchsia::ui::gfx::LayerArgs layer;
+fuchsia::ui::gfx::Command NewCreateSceneLayerCmd(uint32_t id) {
+  fuchsia::ui::gfx::SceneLayerArgs layer;
 
   fuchsia::ui::gfx::ResourceArgs resource;
-  resource.set_layer(std::move(layer));
+  resource.set_scene_layer(std::move(layer));
 
   return NewCreateResourceCmd(id, std::move(resource));
 }
@@ -145,9 +145,8 @@ fuchsia::ui::gfx::Command NewCreateSceneCmd(uint32_t id) {
   return NewCreateResourceCmd(id, std::move(resource));
 }
 
-fuchsia::ui::gfx::Command NewCreateCameraCmd(uint32_t id, uint32_t scene_id) {
+fuchsia::ui::gfx::Command NewCreateCameraCmd(uint32_t id) {
   fuchsia::ui::gfx::CameraArgs camera;
-  camera.scene_id = scene_id;
 
   fuchsia::ui::gfx::ResourceArgs resource;
   resource.set_camera(std::move(camera));
@@ -155,10 +154,8 @@ fuchsia::ui::gfx::Command NewCreateCameraCmd(uint32_t id, uint32_t scene_id) {
   return NewCreateResourceCmd(id, std::move(resource));
 }
 
-fuchsia::ui::gfx::Command NewCreateStereoCameraCmd(uint32_t id,
-                                                   uint32_t scene_id) {
+fuchsia::ui::gfx::Command NewCreateStereoCameraCmd(uint32_t id) {
   fuchsia::ui::gfx::StereoCameraArgs stereo_camera;
-  stereo_camera.scene_id = scene_id;
 
   fuchsia::ui::gfx::ResourceArgs resource;
   resource.set_stereo_camera(std::move(stereo_camera));
@@ -761,10 +758,10 @@ fuchsia::ui::gfx::Command NewSetHitTestBehaviorCmd(
   return command;
 }
 
-fuchsia::ui::gfx::Command NewSetCameraCmd(uint32_t renderer_id,
+fuchsia::ui::gfx::Command NewSetCameraCmd(uint32_t scene_layer_id,
                                           uint32_t camera_id) {
   fuchsia::ui::gfx::SetCameraCmd set_camera;
-  set_camera.renderer_id = renderer_id;
+  set_camera.scene_layer_id = scene_layer_id;
   set_camera.camera_id = camera_id;
 
   fuchsia::ui::gfx::Command command;
@@ -886,14 +883,25 @@ fuchsia::ui::gfx::Command NewSetLayerStackCmd(uint32_t compositor_id,
   return command;
 }
 
-fuchsia::ui::gfx::Command NewSetRendererCmd(uint32_t layer_id,
+fuchsia::ui::gfx::Command NewSetRendererCmd(uint32_t scene_layer_id,
                                             uint32_t renderer_id) {
   fuchsia::ui::gfx::SetRendererCmd set_renderer;
-  set_renderer.layer_id = layer_id;
+  set_renderer.scene_layer_id = scene_layer_id;
   set_renderer.renderer_id = renderer_id;
 
   fuchsia::ui::gfx::Command command;
   command.set_set_renderer(std::move(set_renderer));
+  return command;
+}
+
+fuchsia::ui::gfx::Command NewSetSceneCmd(uint32_t scene_layer_id,
+                                         uint32_t scene_id) {
+  fuchsia::ui::gfx::SetSceneCmd set_scene;
+  set_scene.scene_layer_id = scene_layer_id;
+  set_scene.scene_id = scene_id;
+
+  fuchsia::ui::gfx::Command command;
+  command.set_set_scene(std::move(set_scene));
   return command;
 }
 

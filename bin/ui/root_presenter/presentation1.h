@@ -237,7 +237,7 @@ class Presentation1 : private ::fuchsia::ui::viewsv1::ViewTreeListener,
   fuchsia::ui::scenic::Scenic* const scenic_;
   scenic::Session* const session_;
 
-  scenic::Layer layer_;
+  scenic::SceneLayer layer_;
   scenic::Renderer renderer_;
   // TODO(MZ-254): put camera before scene.
   scenic::Scene scene_;

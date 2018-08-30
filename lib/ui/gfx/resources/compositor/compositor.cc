@@ -19,8 +19,8 @@
 #include "garnet/lib/ui/gfx/engine/frame_timings.h"
 #include "garnet/lib/ui/gfx/engine/session.h"
 #include "garnet/lib/ui/gfx/resources/camera.h"
-#include "garnet/lib/ui/gfx/resources/compositor/layer.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer_stack.h"
+#include "garnet/lib/ui/gfx/resources/compositor/scene_layer.h"
 #include "garnet/lib/ui/gfx/resources/dump_visitor.h"
 #include "garnet/lib/ui/gfx/resources/lights/ambient_light.h"
 #include "garnet/lib/ui/gfx/resources/lights/directional_light.h"
@@ -115,7 +115,7 @@ static void InitEscherStage(
 }
 
 std::pair<uint32_t, uint32_t> Compositor::GetBottomLayerSize() const {
-  std::vector<Layer*> drawable_layers = GetDrawableLayers();
+  std::vector<SceneLayer*> drawable_layers = GetDrawableLayers();
   FXL_CHECK(!drawable_layers.empty()) << "No drawable layers";
   return {drawable_layers[0]->width(), drawable_layers[0]->height()};
 }
@@ -124,17 +124,16 @@ int Compositor::GetNumDrawableLayers() const {
   return GetDrawableLayers().size();
 }
 
-std::vector<Layer*> Compositor::GetDrawableLayers() const {
+std::vector<SceneLayer*> Compositor::GetDrawableLayers() const {
   if (!layer_stack_) {
-    return std::vector<Layer*>();
+    return std::vector<SceneLayer*>();
   }
-  std::vector<Layer*> drawable_layers;
-  for (auto& layer : layer_stack_->layers()) {
-    if (layer->IsDrawable()) {
-      drawable_layers.push_back(layer.get());
-    }
+  std::vector<SceneLayer*> drawable_layers;
+  if (layer_stack_) {
+    layer_stack_->GetDrawableLayers(&drawable_layers);
   }
 
+  // TODO(before-submit): multiple nested LayerStacks will mess this up.
   // Sort the layers from bottom to top.
   std::sort(drawable_layers.begin(), drawable_layers.end(), [](auto a, auto b) {
     return a->translation().z < b->translation().z;
@@ -144,8 +143,8 @@ std::vector<Layer*> Compositor::GetDrawableLayers() const {
 }
 
 std::unique_ptr<escher::Model> Compositor::DrawOverlaysToModel(
-    const std::vector<Layer*>& drawable_layers, const escher::FramePtr& frame,
-    const FrameTimingsPtr& frame_timings,
+    const std::vector<SceneLayer*>& drawable_layers,
+    const escher::FramePtr& frame, const FrameTimingsPtr& frame_timings,
     escher::PaperRenderer* escher_renderer,
     escher::ShadowMapRenderer* shadow_renderer) {
   TRACE_DURATION("gfx", "Compositor::DrawOverlaysToModel");
@@ -187,10 +186,10 @@ void Compositor::DrawLayer(const escher::FramePtr& frame,
                            const FrameTimingsPtr& frame_timings,
                            escher::PaperRenderer* escher_renderer,
                            escher::ShadowMapRenderer* shadow_map_renderer,
-                           Layer* layer, const escher::ImagePtr& output_image,
+                           SceneLayer* layer,
+                           const escher::ImagePtr& output_image,
                            const escher::Model* overlay_model) {
   TRACE_DURATION("gfx", "Compositor::DrawLayer");
-  FXL_DCHECK(layer->IsDrawable());
 
   float stage_width = static_cast<float>(output_image->width());
   float stage_height = static_cast<float>(output_image->height());
@@ -208,13 +207,13 @@ void Compositor::DrawLayer(const escher::FramePtr& frame,
   }
 
   auto& renderer = layer->renderer();
-  auto& scene = renderer->camera()->scene();
+  auto& scene = layer->scene();
 
   escher::Stage stage;
   InitEscherStage(&stage, layer->GetViewingVolume(), scene->ambient_lights(),
                   scene->directional_lights());
-  escher::Model model(renderer->CreateDisplayList(renderer->camera()->scene(),
-                                                  escher::vec2(layer->size())));
+  escher::Model model(
+      renderer->CreateDisplayList(scene, escher::vec2(layer->size())));
 
   // Set the renderer's shadow mode, and generate a shadow map if necessary.
   escher::ShadowMapPtr shadow_map;
@@ -250,15 +249,15 @@ void Compositor::DrawLayer(const escher::FramePtr& frame,
                                shadow_map, overlay_model);
   };
 
-  if (renderer->camera()->IsKindOf<StereoCamera>()) {
-    auto stereo_camera = renderer->camera()->As<StereoCamera>();
+  if (layer->camera()->IsKindOf<StereoCamera>()) {
+    auto stereo_camera = layer->camera()->As<StereoCamera>();
     for (const auto eye : {StereoCamera::Eye::LEFT, StereoCamera::Eye::RIGHT}) {
       escher::Camera camera = stereo_camera->GetEscherCamera(eye);
       draw_frame_lambda(camera);
     }
   } else {
     escher::Camera camera =
-        renderer->camera()->GetEscherCamera(stage.viewing_volume());
+        layer->camera()->GetEscherCamera(stage.viewing_volume());
     draw_frame_lambda(camera);
   }
 }
@@ -271,7 +270,7 @@ bool Compositor::DrawFrame(const FrameTimingsPtr& frame_timings,
   if (!swapchain_)
     return false;
 
-  std::vector<Layer*> drawable_layers = GetDrawableLayers();
+  std::vector<SceneLayer*> drawable_layers = GetDrawableLayers();
   if (drawable_layers.empty())
     return false;
 
@@ -313,7 +312,7 @@ void Compositor::DrawToImage(escher::PaperRenderer* escher_renderer,
                              const escher::SemaphorePtr& frame_done_semaphore) {
   TRACE_DURATION("gfx", "Compositor::DrawToImage");
 
-  const std::vector<Layer*> drawable_layers = GetDrawableLayers();
+  const std::vector<SceneLayer*> drawable_layers = GetDrawableLayers();
   if (drawable_layers.empty()) {
     return;
   }

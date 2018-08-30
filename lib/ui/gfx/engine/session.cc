@@ -21,6 +21,7 @@
 #include "garnet/lib/ui/gfx/resources/compositor/display_compositor.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer_stack.h"
+#include "garnet/lib/ui/gfx/resources/compositor/scene_layer.h"
 #include "garnet/lib/ui/gfx/resources/gpu_memory.h"
 #include "garnet/lib/ui/gfx/resources/host_memory.h"
 #include "garnet/lib/ui/gfx/resources/image.h"
@@ -180,6 +181,8 @@ bool Session::ApplyCommand(::fuchsia::ui::gfx::Command command) {
       return ApplyRemoveAllLayersCmd(std::move(command.remove_all_layers()));
     case ::fuchsia::ui::gfx::Command::Tag::kSetLayerStack:
       return ApplySetLayerStackCmd(std::move(command.set_layer_stack()));
+    case ::fuchsia::ui::gfx::Command::Tag::kSetScene:
+      return ApplySetSceneCmd(std::move(command.set_scene()));
     case ::fuchsia::ui::gfx::Command::Tag::kSetRenderer:
       return ApplySetRendererCmd(std::move(command.set_renderer()));
     case ::fuchsia::ui::gfx::Command::Tag::kSetRendererParam:
@@ -258,8 +261,8 @@ bool Session::ApplyCreateResourceCmd(
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::kShapeNode:
       return ApplyCreateShapeNode(id, std::move(command.resource.shape_node()));
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::kCompositor:
-      return ApplyCreateCompositor(
-          id, std::move(command.resource.compositor()));
+      return ApplyCreateCompositor(id,
+                                   std::move(command.resource.compositor()));
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::kDisplayCompositor:
       return ApplyCreateDisplayCompositor(
           id, std::move(command.resource.display_compositor()));
@@ -269,8 +272,9 @@ bool Session::ApplyCreateResourceCmd(
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::kLayerStack:
       return ApplyCreateLayerStack(id,
                                    std::move(command.resource.layer_stack()));
-    case ::fuchsia::ui::gfx::ResourceArgs::Tag::kLayer:
-      return ApplyCreateLayer(id, std::move(command.resource.layer()));
+    case ::fuchsia::ui::gfx::ResourceArgs::Tag::kSceneLayer:
+      return ApplyCreateSceneLayer(id,
+                                   std::move(command.resource.scene_layer()));
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::kVariable:
       return ApplyCreateVariable(id, std::move(command.resource.variable()));
     case ::fuchsia::ui::gfx::ResourceArgs::Tag::Invalid:
@@ -427,7 +431,7 @@ bool Session::ApplySetAnchorCmd(::fuchsia::ui::gfx::SetAnchorCmd command) {
 }
 
 bool Session::ApplySetSizeCmd(::fuchsia::ui::gfx::SetSizeCmd command) {
-  if (auto layer = resources_.FindResource<Layer>(command.id)) {
+  if (auto layer = resources_.FindResource<SceneLayer>(command.id)) {
     if (IsVariable(command.value)) {
       error_reporter_->ERROR() << "scenic::gfx::Session::ApplySetSizeCmd(): "
                                   "unimplemented for variable value.";
@@ -497,20 +501,6 @@ bool Session::ApplySetViewPropertiesCmd(
           resources_.FindResource<ViewHolder>(command.view_holder_id)) {
     view_holder->SetViewProperties(std::move(command.properties));
     return true;
-  }
-  return false;
-}
-
-bool Session::ApplySetCameraCmd(::fuchsia::ui::gfx::SetCameraCmd command) {
-  if (auto renderer = resources_.FindResource<Renderer>(command.renderer_id)) {
-    if (command.camera_id == 0) {
-      renderer->SetCamera(nullptr);
-      return true;
-    } else if (auto camera =
-                   resources_.FindResource<Camera>(command.camera_id)) {
-      renderer->SetCamera(std::move(camera));
-      return true;
-    }
   }
   return false;
 }
@@ -605,12 +595,48 @@ bool Session::ApplySetLayerStackCmd(
   return false;
 }
 
-bool Session::ApplySetRendererCmd(::fuchsia::ui::gfx::SetRendererCmd command) {
-  auto layer = resources_.FindResource<Layer>(command.layer_id);
-  auto renderer = resources_.FindResource<Renderer>(command.renderer_id);
+// TODO(before-submit): file bug to make a macro for this pattern.
+// SetSceneCmd, SetCameraCmd, SetRendererCmd are virtually identical.
+bool Session::ApplySetSceneCmd(::fuchsia::ui::gfx::SetSceneCmd command) {
+  if (auto layer =
+          resources_.FindResource<SceneLayer>(command.scene_layer_id)) {
+    if (command.scene_id == 0) {
+      layer->SetScene(nullptr);
+      return true;
+    } else if (auto scene = resources_.FindResource<Scene>(command.scene_id)) {
+      layer->SetScene(std::move(scene));
+      return true;
+    }
+  }
+  return false;
+}
 
-  if (layer && renderer) {
-    return layer->SetRenderer(std::move(renderer));
+bool Session::ApplySetCameraCmd(::fuchsia::ui::gfx::SetCameraCmd command) {
+  if (auto layer =
+          resources_.FindResource<SceneLayer>(command.scene_layer_id)) {
+    if (command.camera_id == 0) {
+      layer->SetCamera(nullptr);
+      return true;
+    } else if (auto camera =
+                   resources_.FindResource<Camera>(command.camera_id)) {
+      layer->SetCamera(std::move(camera));
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Session::ApplySetRendererCmd(::fuchsia::ui::gfx::SetRendererCmd command) {
+  if (auto layer =
+          resources_.FindResource<SceneLayer>(command.scene_layer_id)) {
+    if (command.renderer_id == 0) {
+      layer->SetRenderer(nullptr);
+      return true;
+    } else if (auto renderer =
+                   resources_.FindResource<Renderer>(command.renderer_id)) {
+      layer->SetRenderer(std::move(renderer));
+      return true;
+    }
   }
   return false;
 }
@@ -1042,9 +1068,9 @@ bool Session::ApplyCreateLayerStack(scenic::ResourceId id,
                      : false;
 }
 
-bool Session::ApplyCreateLayer(scenic::ResourceId id,
-                               ::fuchsia::ui::gfx::LayerArgs args) {
-  auto layer = CreateLayer(id, std::move(args));
+bool Session::ApplyCreateSceneLayer(scenic::ResourceId id,
+                                    ::fuchsia::ui::gfx::SceneLayerArgs args) {
+  auto layer = CreateSceneLayer(id, std::move(args));
   return layer ? resources_.AddResource(id, std::move(layer)) : false;
 }
 
@@ -1103,18 +1129,12 @@ ResourcePtr Session::CreateScene(scenic::ResourceId id,
 
 ResourcePtr Session::CreateCamera(scenic::ResourceId id,
                                   ::fuchsia::ui::gfx::CameraArgs args) {
-  if (auto scene = resources_.FindResource<Scene>(args.scene_id)) {
-    return fxl::MakeRefCounted<Camera>(this, id, std::move(scene));
-  }
-  return ResourcePtr();
+  return fxl::MakeRefCounted<Camera>(this, id);
 }
 
 ResourcePtr Session::CreateStereoCamera(
     scenic::ResourceId id, const ::fuchsia::ui::gfx::StereoCameraArgs args) {
-  if (auto scene = resources_.FindResource<Scene>(args.scene_id)) {
-    return fxl::MakeRefCounted<StereoCamera>(this, id, std::move(scene));
-  }
-  return ResourcePtr();
+  return fxl::MakeRefCounted<StereoCamera>(this, id);
 }
 
 ResourcePtr Session::CreateRenderer(scenic::ResourceId id,
@@ -1257,9 +1277,9 @@ ResourcePtr Session::CreateVariable(scenic::ResourceId id,
   return nullptr;
 }
 
-ResourcePtr Session::CreateLayer(scenic::ResourceId id,
-                                 ::fuchsia::ui::gfx::LayerArgs args) {
-  return fxl::MakeRefCounted<Layer>(this, id);
+ResourcePtr Session::CreateSceneLayer(scenic::ResourceId id,
+                                      ::fuchsia::ui::gfx::SceneLayerArgs args) {
+  return fxl::MakeRefCounted<SceneLayer>(this, id);
 }
 
 ResourcePtr Session::CreateCircle(scenic::ResourceId id, float initial_radius) {
@@ -1309,8 +1329,10 @@ ResourcePtr Session::CreateRoundedRectangle(scenic::ResourceId id, float width,
                              escher::MeshAttribute::kUV};
 
   return fxl::MakeRefCounted<RoundedRectangleShape>(
-      this, id, rect_spec, factory->NewRoundedRect(rect_spec, mesh_spec, 
-        engine()->GetCommandContext()->batch_gpu_uploader));
+      this, id, rect_spec,
+      factory->NewRoundedRect(
+          rect_spec, mesh_spec,
+          engine()->GetCommandContext()->batch_gpu_uploader));
 }
 
 ResourcePtr Session::CreateMesh(scenic::ResourceId id) {
@@ -1355,9 +1377,7 @@ ErrorReporter* Session::error_reporter() const {
   return error_reporter_ ? error_reporter_ : ErrorReporter::Default();
 }
 
-EventReporter* Session::event_reporter() const {
-  return event_reporter_;
-}
+EventReporter* Session::event_reporter() const { return event_reporter_; }
 
 bool Session::AssertValueIsOfType(const ::fuchsia::ui::gfx::Value& value,
                                   const ::fuchsia::ui::gfx::Value::Tag* tags,
@@ -1546,7 +1566,6 @@ void Session::EnqueueEvent(::fuchsia::ui::gfx::Event event) {
   }
   event_reporter_->EnqueueEvent(std::move(event));
 }
-
 
 void Session::EnqueueEvent(::fuchsia::ui::input::InputEvent event) {
   if (!is_valid()) {

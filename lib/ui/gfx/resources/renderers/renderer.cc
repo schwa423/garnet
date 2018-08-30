@@ -12,7 +12,7 @@
 #include "lib/escher/scene/stage.h"
 
 #include "garnet/lib/ui/gfx/engine/session.h"
-#include "garnet/lib/ui/gfx/resources/camera.h"
+#include "garnet/lib/ui/gfx/resources/compositor/scene_layer.h"
 #include "garnet/lib/ui/gfx/resources/dump_visitor.h"
 #include "garnet/lib/ui/gfx/resources/import.h"
 #include "garnet/lib/ui/gfx/resources/material.h"
@@ -54,8 +54,6 @@ std::vector<escher::Object> Renderer::CreateDisplayList(
   scene->Accept(&v);
   return v.TakeDisplayList();
 }
-
-void Renderer::SetCamera(CameraPtr camera) { camera_ = std::move(camera); }
 
 bool Renderer::SetShadowTechnique(
     ::fuchsia::ui::gfx::ShadowTechnique technique) {
@@ -189,6 +187,11 @@ void Renderer::Visitor::Visit(LayerStack* r) { FXL_DCHECK(false); }
 
 void Renderer::Visitor::Visit(Layer* r) { FXL_DCHECK(false); }
 
+void Renderer::Visitor::Visit(SceneLayer* r) {
+  // TODO(before-submit): use camera's projection matrix.
+  Visit(r->scene().get());
+}
+
 void Renderer::Visitor::Visit(ShapeNode* r) {
   auto& shape = r->shape();
   auto& material = r->material();
@@ -228,10 +231,7 @@ void Renderer::Visitor::Visit(Material* r) { r->UpdateEscherMaterial(); }
 
 void Renderer::Visitor::Visit(Import* r) { FXL_CHECK(false); }
 
-void Renderer::Visitor::Visit(Camera* r) {
-  // TODO: use camera's projection matrix.
-  Visit(r->scene().get());
-}
+void Renderer::Visitor::Visit(Camera* r) { FXL_CHECK(false); }
 
 void Renderer::Visitor::Visit(Renderer* r) { FXL_CHECK(false); }
 

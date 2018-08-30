@@ -64,6 +64,9 @@ enum ResourceType : uint64_t {
 
   // Animation
   kVariable = 1ul << 34,
+
+  // TODO(before-submit): slot into the right place
+  kSceneLayer = 1ul << 35,
 };
 
 // Bitwise combination of ResourceTypes.  A subclass hierarchy can be

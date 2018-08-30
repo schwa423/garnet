@@ -11,6 +11,7 @@
 #include "garnet/lib/ui/gfx/resources/compositor/display_compositor.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer_stack.h"
+#include "garnet/lib/ui/gfx/resources/compositor/scene_layer.h"
 #include "garnet/lib/ui/gfx/resources/gpu_memory.h"
 #include "garnet/lib/ui/gfx/resources/host_memory.h"
 #include "garnet/lib/ui/gfx/resources/image.h"
@@ -258,6 +259,13 @@ void DumpVisitor::Visit(DisplayCompositor* r) {
   EndItem();
 }
 
+void DumpVisitor::Visit(Layer* r) {
+  FXL_DCHECK(false) << "Layer is an abstract base class.";
+  BeginItem("Layer", r);
+  VisitResource(r);
+  EndItem();
+}
+
 void DumpVisitor::Visit(LayerStack* r) {
   BeginItem("LayerStack", r);
   if (!r->layers().empty()) {
@@ -271,16 +279,24 @@ void DumpVisitor::Visit(LayerStack* r) {
   EndItem();
 }
 
-void DumpVisitor::Visit(Layer* r) {
-  BeginItem("Layer", r);
+void DumpVisitor::Visit(SceneLayer* r) {
+  BeginItem("SceneLayer", r);
   WriteProperty("width") << r->width();
   WriteProperty("height") << r->height();
+  if (r->camera()) {
+    BeginSection("camera");
+    r->camera()->Accept(this);
+    EndSection();
+  }
+  if (r->scene()) {
+    BeginSection("scene");
+    r->scene()->Accept(this);
+    EndSection();
+  }
   if (r->renderer()) {
     BeginSection("renderer");
     r->renderer()->Accept(this);
     EndSection();
-  } else {
-    // TODO(MZ-249): Texture or ImagePipe or whatever.
   }
   VisitResource(r);
   EndItem();
@@ -292,20 +308,12 @@ void DumpVisitor::Visit(Camera* r) {
   WriteProperty("position") << r->eye_position();
   WriteProperty("look_at") << r->eye_look_at();
   WriteProperty("up") << r->eye_up();
-  BeginSection("scene");
-  r->scene()->Accept(this);
-  EndSection();
   VisitResource(r);
   EndItem();
 }
 
 void DumpVisitor::Visit(Renderer* r) {
   BeginItem("Renderer", r);
-  if (r->camera()) {
-    BeginSection("camera");
-    r->camera()->Accept(this);
-    EndSection();
-  }
   VisitResource(r);
   EndItem();
 }

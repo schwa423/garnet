@@ -58,14 +58,15 @@ ExamplePresenter::Presentation::Presentation(scenic::Session* session,
                    "hello_base_view Presentation of ShadertoyEmbedderView") {
   scenic::Renderer renderer(session);
   scenic::Scene scene(session);
-  scenic::Camera camera(scene);
+  scenic::Camera camera(session);
   scenic::AmbientLight ambient_light(session);
   scenic::DirectionalLight directional_light(session);
 
   scenic::EntityNode root_node(session);
 
+  layer_.SetCamera(camera);
+  layer_.SetScene(scene);
   layer_.SetRenderer(renderer);
-  renderer.SetCamera(camera);
 
   // Set orthographic projection from viewing volume.
   camera.SetProjection(0.f);

@@ -40,7 +40,7 @@ class ExamplePresenter : private fuchsia::ui::policy::Presenter2 {
     const scenic::Layer& layer() const { return layer_; }
 
    private:
-    scenic::Layer layer_;
+    scenic::SceneLayer layer_;
     scenic::EntityNode view_holder_node_;
     scenic::ViewHolder view_holder_;
   };

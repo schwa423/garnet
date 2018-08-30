@@ -11,18 +11,13 @@
 #include "garnet/lib/ui/gfx/engine/hit_tester.h"
 #include "garnet/lib/ui/gfx/resources/resource.h"
 
-#include "lib/escher/geometry/types.h"
-#include "lib/escher/scene/viewing_volume.h"
-
 namespace scenic {
 namespace gfx {
 
 class Layer;
 class LayerStack;
-class Renderer;
-class Scene;
+class SceneLayer;
 using LayerPtr = fxl::RefPtr<Layer>;
-using RendererPtr = fxl::RefPtr<Renderer>;
 
 // A Layer can appear in a LayerStack, and be displayed by a Compositor.
 // TODO(MZ-249): Layers can currently only use a rendered scene as content, but
@@ -31,58 +26,33 @@ class Layer : public Resource {
  public:
   static const ResourceTypeInfo kTypeInfo;
 
-  Layer(Session* session, scenic::ResourceId id);
-
-  ~Layer() override;
-
   // | Resource |
   void Accept(class ResourceVisitor* visitor) override;
-
-  // SetRendererCmd.
-  bool SetRenderer(RendererPtr renderer);
-  const RendererPtr& renderer() const { return renderer_; }
-
-  // SetSizeCmd.
-  bool SetSize(const escher::vec2& size);
-  const escher::vec2& size() const { return size_; }
-
-  // SetColorCmd.
-  bool SetColor(const escher::vec4& color);
-  const escher::vec4& color() const { return color_; }
 
   // |Resource|, DetachCmd.
   bool Detach() override;
 
   // Add the scene rendered by this layer, if any, to |scenes_out|.
-  void CollectScenes(std::set<Scene*>* scenes_out);
+  virtual void CollectScenes(std::set<Scene*>* scenes_out) = 0;
 
-  bool IsDrawable() const;
-
-  const escher::vec3& translation() const { return translation_; }
-  uint32_t width() const { return static_cast<uint32_t>(size_.x); }
-  uint32_t height() const { return static_cast<uint32_t>(size_.y); }
-
-  // TODO(MZ-250): support detecting and/or setting layer opacity.
-  bool opaque() const { return false; }
+  virtual void GetDrawableLayers(std::vector<SceneLayer*>* layers_out) = 0;
 
   // Performs a hit test into the scene of renderer, along the provided ray in
   // the layer's coordinate system.
   //
   // The hit collection behavior depends on the hit tester.
-  std::vector<Hit> HitTest(const escher::ray4& ray,
-                           HitTester* hit_tester) const;
+  virtual std::vector<Hit> HitTest(const escher::ray4& ray,
+                                   HitTester* hit_tester) const = 0;
 
-  // Returns the current viewing volume of the layer. Used by the compositor
-  // when initializing the stage, as well as for hit testing.
-  escher::ViewingVolume GetViewingVolume() const;
+ protected:
+  Layer(Session* session, scenic::ResourceId id,
+        const ResourceTypeInfo& type_info);
+
+  ~Layer() override;
 
  private:
   friend class LayerStack;
 
-  RendererPtr renderer_;
-  escher::vec3 translation_ = escher::vec3(0, 0, 0);
-  escher::vec2 size_ = escher::vec2(0, 0);
-  escher::vec4 color_ = escher::vec4(1, 1, 1, 1);
   LayerStack* layer_stack_ = nullptr;
 };
 

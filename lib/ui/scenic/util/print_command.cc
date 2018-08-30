@@ -58,6 +58,8 @@ std::ostream& operator<<(std::ostream& stream,
       return stream << "SetViewProperties";
     case Command::Tag::kSetCamera:
       return stream << "SetCamera";
+    case Command::Tag::kSetScene:
+      return stream << "SetScene";
     case Command::Tag::kSetCameraTransform:
       return stream << "SetCameraTransform";
     case Command::Tag::kSetStereoCameraProjection:
@@ -184,8 +186,8 @@ std::ostream& operator<<(std::ostream& stream,
     case ResourceArgs::Tag::kLayerStack:
       stream << "LayerStack";
       break;
-    case ResourceArgs::Tag::kLayer:
-      stream << "Layer";
+    case ResourceArgs::Tag::kSceneLayer:
+      stream << "SceneLayer";
       break;
     case ResourceArgs::Tag::kVariable:
       stream << "Variable";

@@ -38,7 +38,6 @@ union Command {
   SetViewPropertiesCmd set_view_properties;
 
   // Camera and lighting commands.
-  SetCameraCmd set_camera;
   SetCameraTransformCmd set_camera_transform;
   SetCameraProjectionCmd set_camera_projection;
   SetStereoCameraProjectionCmd set_stereo_camera_projection;
@@ -56,6 +55,8 @@ union Command {
   BindMeshBuffersCmd bind_mesh_buffers;
 
   // Layer and renderer commands.
+  SetCameraCmd set_camera;
+  SetSceneCmd set_scene;
   AddLayerCmd add_layer;
   RemoveLayerCmd remove_layer;
   RemoveAllLayersCmd remove_all_layers;
@@ -364,17 +365,6 @@ struct SetViewPropertiesCmd {
   ViewProperties properties;
 };
 
-// Sets a renderer's camera.
-//
-// Constraints:
-// - |renderer_id| refs a |Renderer|.
-// - |camera_id| refs a |Camera|, or stops rendering by passing zero.
-// - |matrix| is a value or variable of type kMatrix4x4.
-struct SetCameraCmd {
-  uint32 renderer_id;
-  uint32 camera_id;
-};
-
 // Sets a camera's view matrix.
 // This operation can be applied to both Cameras and StereoCameras.
 //
@@ -626,29 +616,48 @@ struct RemoveLayerCmd {
   uint32 layer_id;
 };
 
-// Remove all layers from a layer stack.
+// Remove all layers from a LayerStack.
 // Constraints
 // - |layer_stack_id| refs a |LayerStack|.
 struct RemoveAllLayersCmd {
   uint32 layer_stack_id;
 };
 
-// Set a compositor's layer stack, replacing the current stack (if any).
+// Sets a SceneLayer's camera.
+//
+// Constraints:
+// - |layer_id| refs a |SceneLayer|.
+// - |camera_id| refs a |Camera|, or stops rendering by passing zero.
+struct SetCameraCmd {
+  uint32 scene_layer_id;
+  uint32 camera_id;
+};
+
+// Set a SceneLayer's scene, replacing the current one (if any).
+// Constraints:
+// - |scene_layer_id| refs a |SceneLayer|.
+// - |scene_id| refs a |Scene|.
+struct SetSceneCmd {
+  uint32 scene_layer_id;
+  uint32 scene_id;
+};
+
+// Set a SceneLayer's renderer, replacing the current renderer (if any).
+// Constraints:
+// - |scene_layer_id| refs a |SceneLayer|.
+// - |renderer_id| refs a |Renderer|.
+struct SetRendererCmd {
+  uint32 scene_layer_id;
+  uint32 renderer_id;
+};
+
+// Set a Compositor's layer stack, replacing the current stack (if any).
 // Constraints:
 // - |compositor_id| refs a |DisplayCompositor| or |ImagePipeCompositor|.
 // - |layer_stack_id| refs a |LayerStack|.
 struct SetLayerStackCmd {
   uint32 compositor_id;
   uint32 layer_stack_id;
-};
-
-// Set a layer's renderer, replacing the current renderer (if any).
-// Constraints:
-// - |layer_id| refs a |Layer|.
-// - |renderer_id| refs a |Renderer|.
-struct SetRendererCmd {
-  uint32 layer_id;
-  uint32 renderer_id;
 };
 
 // Sets a parameter that affects how a renderer renders a scene.

@@ -16,13 +16,11 @@ using PoseBufferTest = VkSessionTest;
 
 VK_TEST_F(PoseBufferTest, Validation) {
   const scenic::ResourceId invalid_id = 0;
-  const scenic::ResourceId scene_id = 1;
-  const scenic::ResourceId camera_id = 2;
-  const scenic::ResourceId memory_id = 3;
-  const scenic::ResourceId buffer_id = 4;
+  const scenic::ResourceId camera_id = 1;
+  const scenic::ResourceId memory_id = 2;
+  const scenic::ResourceId buffer_id = 3;
 
-  ASSERT_TRUE(Apply(scenic::NewCreateSceneCmd(scene_id)));
-  ASSERT_TRUE(Apply(scenic::NewCreateCameraCmd(camera_id, scene_id)));
+  ASSERT_TRUE(Apply(scenic::NewCreateCameraCmd(camera_id)));
 
   uint64_t vmo_size = PAGE_SIZE;
   zx::vmo vmo;

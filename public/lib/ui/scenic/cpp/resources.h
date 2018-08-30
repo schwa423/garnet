@@ -460,8 +460,7 @@ class CameraBase : public Resource {
 // Represents a camera resource in a session.
 class Camera : public CameraBase {
  public:
-  explicit Camera(const Scene& scene);
-  Camera(Session* session, uint32_t scene_id);
+  explicit Camera(Session* session);
   Camera(Camera&& moved);
   ~Camera();
 
@@ -472,8 +471,7 @@ class Camera : public CameraBase {
 // Represents a StereoCamera resource in a session.
 class StereoCamera final : public CameraBase {
  public:
-  explicit StereoCamera(const Scene& scene);
-  StereoCamera(Session* session, uint32_t scene_id);
+  explicit StereoCamera(Session* session);
   StereoCamera(StereoCamera&& moved);
   ~StereoCamera();
 
@@ -508,11 +506,22 @@ class Renderer final : public Resource {
 };
 
 // Represents a layer resource in a session.
-class Layer final : public Resource {
+class Layer : public Resource {
  public:
+  // Detaches the node from its Layer-stack, if any.
+  void Detach();
+
+ protected:
   explicit Layer(Session* session);
   Layer(Layer&& moved);
   ~Layer();
+};
+
+class SceneLayer final : public Layer {
+ public:
+  explicit SceneLayer(Session* session);
+  SceneLayer(SceneLayer&& moved);
+  ~SceneLayer();
 
   // Sets the layer's XY translation and Z-order.
   void SetTranslation(float tx, float ty, float tz) {
@@ -525,6 +534,18 @@ class Layer final : public Resource {
   }
   void SetSize(const float size[2]);
 
+  void SetCamera(const Camera& camera) {
+    ZX_DEBUG_ASSERT(session() == camera.session());
+    SetCamera(camera.id());
+  }
+  void SetCamera(uint32_t camera_id);
+
+  void SetScene(const Scene& scene) {
+    ZX_DEBUG_ASSERT(session() == scene.session());
+    SetScene(scene.id());
+  }
+  void SetScene(uint32_t scene_id);
+
   void SetRenderer(const Renderer& renderer) {
     ZX_DEBUG_ASSERT(session() == renderer.session());
     SetRenderer(renderer.id());
@@ -533,7 +554,7 @@ class Layer final : public Resource {
 };
 
 // Represents a layer-stack resource in a session.
-class LayerStack final : public Resource {
+class LayerStack final : public Layer {
  public:
   explicit LayerStack(Session* session);
   LayerStack(LayerStack&& moved);
@@ -552,19 +573,29 @@ class LayerStack final : public Resource {
   void RemoveAllLayers();
 };
 
-// Represents a display-compositor resource in a session.
-class DisplayCompositor final : public Resource {
+// Represents a compositor resource in a session.
+class Compositor : public Resource {
  public:
-  explicit DisplayCompositor(Session* session);
-  DisplayCompositor(DisplayCompositor&& moved);
-  ~DisplayCompositor();
-
+  // TODO(before-submit): change to SetLayer.
   // Sets the layer-stack that is to be composited.
   void SetLayerStack(const LayerStack& layer_stack) {
     ZX_DEBUG_ASSERT(session() == layer_stack.session());
     SetLayerStack(layer_stack.id());
   }
   void SetLayerStack(uint32_t layer_stack_id);
+
+ protected:
+  explicit Compositor(Session* session);
+  Compositor(Compositor&& moved);
+  ~Compositor();
+};
+
+// Represents a display-compositor resource in a session.
+class DisplayCompositor final : public Compositor {
+ public:
+  explicit DisplayCompositor(Session* session);
+  DisplayCompositor(DisplayCompositor&& moved);
+  ~DisplayCompositor();
 };
 
 }  // namespace scenic

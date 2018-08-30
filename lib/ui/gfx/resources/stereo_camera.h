@@ -14,7 +14,7 @@ class StereoCamera final : public Camera {
  public:
   static const ResourceTypeInfo kTypeInfo;
 
-  StereoCamera(Session* session, scenic::ResourceId id, ScenePtr scene);
+  StereoCamera(Session* session, scenic::ResourceId id);
 
   void SetStereoProjection(const glm::mat4 left_projection,
                            const glm::mat4 right_projection);
@@ -27,7 +27,6 @@ class StereoCamera final : public Camera {
   escher::Camera GetEscherCamera(Eye eye) const;
 
  private:
-  ScenePtr scene_;
   // Projection Matrices for each eye, left at position 0, right at position 1.
   glm::mat4 projection_[2];
   escher::Camera::Viewport viewports_[2];

@@ -170,6 +170,7 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
   bool ApplyRemoveLayerCmd(::fuchsia::ui::gfx::RemoveLayerCmd command);
   bool ApplyRemoveAllLayersCmd(::fuchsia::ui::gfx::RemoveAllLayersCmd command);
   bool ApplySetLayerStackCmd(::fuchsia::ui::gfx::SetLayerStackCmd command);
+  bool ApplySetSceneCmd(::fuchsia::ui::gfx::SetSceneCmd command);
   bool ApplySetRendererCmd(::fuchsia::ui::gfx::SetRendererCmd command);
   bool ApplySetRendererParamCmd(
       ::fuchsia::ui::gfx::SetRendererParamCmd command);
@@ -229,8 +230,8 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
       scenic::ResourceId id, ::fuchsia::ui::gfx::ImagePipeCompositorArgs args);
   bool ApplyCreateLayerStack(scenic::ResourceId id,
                              ::fuchsia::ui::gfx::LayerStackArgs args);
-  bool ApplyCreateLayer(scenic::ResourceId id,
-                        ::fuchsia::ui::gfx::LayerArgs args);
+  bool ApplyCreateSceneLayer(scenic::ResourceId id,
+                             ::fuchsia::ui::gfx::SceneLayerArgs args);
   bool ApplyCreateVariable(scenic::ResourceId id,
                            ::fuchsia::ui::gfx::VariableArgs args);
 
@@ -275,8 +276,8 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
       scenic::ResourceId id, ::fuchsia::ui::gfx::ImagePipeCompositorArgs args);
   ResourcePtr CreateLayerStack(scenic::ResourceId id,
                                ::fuchsia::ui::gfx::LayerStackArgs args);
-  ResourcePtr CreateLayer(scenic::ResourceId id,
-                          ::fuchsia::ui::gfx::LayerArgs args);
+  ResourcePtr CreateSceneLayer(scenic::ResourceId id,
+                               ::fuchsia::ui::gfx::SceneLayerArgs args);
   ResourcePtr CreateCircle(scenic::ResourceId id, float initial_radius);
   ResourcePtr CreateRectangle(scenic::ResourceId id, float width, float height);
   ResourcePtr CreateRoundedRectangle(scenic::ResourceId id, float width,

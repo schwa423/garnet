@@ -57,10 +57,10 @@ void App::CreateExampleScene(float display_width, float display_height) {
   // scene.
   compositor_ = std::make_unique<DisplayCompositor>(session);
   LayerStack layer_stack(session);
-  Layer layer(session);
+  SceneLayer layer(session);
   Renderer renderer(session);
   Scene scene(session);
-  auto camera = std::make_unique<StereoCamera>(scene);
+  auto camera = std::make_unique<StereoCamera>(session);
 
   float camera_offset = kEdgeLength * 4.f;
   float eye_position[3] = {0, 0, camera_offset};
@@ -78,6 +78,7 @@ void App::CreateExampleScene(float display_width, float display_height) {
   compositor_->SetLayerStack(layer_stack);
   layer_stack.AddLayer(layer);
   layer.SetSize(display_width, display_height);
+  layer.SetScene(scene);
   layer.SetRenderer(renderer);
   renderer.SetCamera(camera->id());
 

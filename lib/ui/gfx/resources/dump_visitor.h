@@ -45,6 +45,7 @@ class DumpVisitor : public ResourceVisitor {
   void Visit(DisplayCompositor* r) override;
   void Visit(LayerStack* r) override;
   void Visit(Layer* r) override;
+  void Visit(SceneLayer* r) override;
   void Visit(Camera* r) override;
   void Visit(Renderer* r) override;
   void Visit(Light* r) override;

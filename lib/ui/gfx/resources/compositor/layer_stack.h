@@ -7,20 +7,16 @@
 
 #include <unordered_set>
 
-#include "garnet/lib/ui/gfx/engine/hit.h"
-#include "garnet/lib/ui/gfx/engine/hit_tester.h"
-#include "garnet/lib/ui/gfx/resources/resource.h"
+#include "garnet/lib/ui/gfx/resources/compositor/layer.h"
 
 namespace scenic {
 namespace gfx {
 
-class Layer;
 class LayerStack;
-using LayerPtr = fxl::RefPtr<Layer>;
 using LayerStackPtr = fxl::RefPtr<LayerStack>;
 
 // A stack of Layers that can be composited by a Compositor.
-class LayerStack : public Resource {
+class LayerStack final : public Layer {
  public:
   static const ResourceTypeInfo kTypeInfo;
 
@@ -33,7 +29,7 @@ class LayerStack : public Resource {
   //
   // The hit collection behavior depends on the hit tester.
   std::vector<Hit> HitTest(const escher::ray4& ray,
-                           HitTester* hit_tester) const;
+                           HitTester* hit_tester) const override;
 
   // AddLayerCmd.
   bool AddLayer(LayerPtr layer);
@@ -46,6 +42,12 @@ class LayerStack : public Resource {
 
   // | Resource |
   void Accept(class ResourceVisitor* visitor) override;
+
+  // | Layer |
+  void CollectScenes(std::set<Scene*>* scenes_out) override;
+
+  // |Layer|
+  void GetDrawableLayers(std::vector<SceneLayer*>* layers_out) override;
 
  private:
   friend class Layer;

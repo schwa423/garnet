@@ -29,6 +29,7 @@ class Compositor;
 class DisplayCompositor;
 class LayerStack;
 class Layer;
+class SceneLayer;
 class Camera;
 class Renderer;
 class Scene;
@@ -68,6 +69,7 @@ class ResourceVisitor {
   virtual void Visit(DisplayCompositor* r) = 0;
   virtual void Visit(LayerStack* r) = 0;
   virtual void Visit(Layer* r) = 0;
+  virtual void Visit(SceneLayer* r) = 0;
 
   // Scene, camera, lighting.
   virtual void Visit(Scene* r) = 0;

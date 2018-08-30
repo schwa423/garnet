@@ -58,7 +58,7 @@ Presentation1::Presentation1(::fuchsia::ui::viewsv1::ViewManager* view_manager,
       layer_(session_),
       renderer_(session_),
       scene_(session_),
-      camera_(scene_),
+      camera_(session_),
       ambient_light_(session_),
       directional_light_(session_),
       root_view_host_node_(session_),
@@ -76,7 +76,8 @@ Presentation1::Presentation1(::fuchsia::ui::viewsv1::ViewManager* view_manager,
       view_listener_binding_(this),
       startup_context_(startup_context),
       weak_factory_(this) {
-  renderer_.SetCamera(camera_);
+  layer_.SetScene(scene_);
+  layer_.SetCamera(camera_);
   layer_.SetRenderer(renderer_);
   scene_.AddChild(root_view_host_node_);
 

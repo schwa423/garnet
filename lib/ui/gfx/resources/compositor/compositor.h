@@ -37,6 +37,7 @@ class Compositor;
 class FrameTimings;
 class Layer;
 class LayerStack;
+class SceneLayer;
 class Scene;
 class Swapchain;
 using CompositorPtr = fxl::RefPtr<Compositor>;
@@ -87,7 +88,7 @@ class Compositor : public Resource {
 
  protected:
   // Returns the list of drawable layers from the layer stack.
-  std::vector<Layer*> GetDrawableLayers() const;
+  std::vector<SceneLayer*> GetDrawableLayers() const;
 
   escher::Escher* escher() const { return escher_.get(); }
 
@@ -99,8 +100,8 @@ class Compositor : public Resource {
   // Draws all the overlays to textures, which are then drawn using the
   // returned model. "Overlays" are all the layers except the bottom one.
   std::unique_ptr<escher::Model> DrawOverlaysToModel(
-      const std::vector<Layer*>& drawable_layers, const escher::FramePtr& frame,
-      const FrameTimingsPtr& frame_timings,
+      const std::vector<SceneLayer*>& drawable_layers,
+      const escher::FramePtr& frame, const FrameTimingsPtr& frame_timings,
       escher::PaperRenderer* escher_renderer,
       escher::ShadowMapRenderer* shadow_renderer);
   escher::ImagePtr GetLayerFramebufferImage(uint32_t width, uint32_t height);
@@ -108,7 +109,7 @@ class Compositor : public Resource {
   void DrawLayer(const escher::FramePtr& frame,
                  const FrameTimingsPtr& frame_timings,
                  escher::PaperRenderer* escher_renderer,
-                 escher::ShadowMapRenderer* shadow_renderer, Layer* layer,
+                 escher::ShadowMapRenderer* shadow_renderer, SceneLayer* layer,
                  const escher::ImagePtr& output_image,
                  const escher::Model* overlay_model);
 

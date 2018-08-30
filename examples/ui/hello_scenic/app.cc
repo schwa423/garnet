@@ -95,16 +95,17 @@ void App::CreateExampleScene(float display_width, float display_height) {
   // scene.
   compositor_ = std::make_unique<DisplayCompositor>(session);
   LayerStack layer_stack(session);
-  Layer layer(session);
+  SceneLayer layer(session);
   Renderer renderer(session);
   Scene scene(session);
-  camera_ = std::make_unique<Camera>(scene);
+  camera_ = std::make_unique<Camera>(session);
 
   compositor_->SetLayerStack(layer_stack);
   layer_stack.AddLayer(layer);
   layer.SetSize(display_width, display_height);
+  layer.SetCamera(camera_->id());
+  layer.SetScene(scene);
   layer.SetRenderer(renderer);
-  renderer.SetCamera(camera_->id());
 
   // Set up lights.
   AmbientLight ambient_light(session);

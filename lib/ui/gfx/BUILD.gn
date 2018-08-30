@@ -75,6 +75,8 @@ source_set("gfx") {
     "resources/compositor/layer.h",
     "resources/compositor/layer_stack.cc",
     "resources/compositor/layer_stack.h",
+    "resources/compositor/scene_layer.cc",
+    "resources/compositor/scene_layer.h",
     "resources/dump_visitor.cc",
     "resources/dump_visitor.h",
     "resources/gpu_image.cc",

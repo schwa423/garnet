@@ -83,7 +83,7 @@ class Presentation2 : public Presentation {
   void OnDeviceAdded(mozart::InputDeviceImpl* input_device) override;
   void OnDeviceRemoved(uint32_t device_id) override;
 
-  const scenic::Layer& layer() const override { return layer_; }
+  const scenic::SceneLayer& layer() const override { return layer_; }
 
   const YieldCallback& yield_callback() override { return yield_callback_; };
 
@@ -210,7 +210,7 @@ class Presentation2 : public Presentation {
   fuchsia::ui::scenic::Scenic* const scenic_;
   scenic::Session* const session_;
 
-  scenic::Layer layer_;
+  scenic::SceneLayer layer_;
   scenic::Renderer renderer_;
   // TODO(MZ-254): put camera before scene.
   scenic::Scene scene_;

@@ -189,16 +189,17 @@ void App::CreateScene(float display_width, float display_height) {
   if (type_ == AppType::CONTAINER) {
     compositor_ = std::make_unique<scenic::DisplayCompositor>(session_ptr);
     scenic::LayerStack layer_stack(session_ptr);
-    scenic::Layer layer(session_ptr);
+    scenic::SceneLayer layer(session_ptr);
     scenic::Renderer renderer(session_ptr);
     scenic::Scene scene(session_ptr);
-    camera_ = std::make_unique<scenic::Camera>(scene);
+    camera_ = std::make_unique<scenic::Camera>(session_ptr);
 
     compositor_->SetLayerStack(layer_stack);
     layer_stack.AddLayer(layer);
     layer.SetSize(display_width, display_height);
+    layer.SetCamera(camera_->id());
+    layer.SetScene(scene);
     layer.SetRenderer(renderer);
-    renderer.SetCamera(camera_->id());
 
     // Set up lights.
     scenic::AmbientLight ambient_light(session_ptr);

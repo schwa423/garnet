@@ -50,7 +50,7 @@ Presentation2::Presentation2(fuchsia::ui::scenic::Scenic* scenic,
       layer_(session_),
       renderer_(session_),
       scene_(session_),
-      camera_(scene_),
+      camera_(session_),
       ambient_light_(session_),
       directional_light_(session_),
       view_holder_node_(session),
@@ -63,7 +63,8 @@ Presentation2::Presentation2(fuchsia::ui::scenic::Scenic* scenic,
       display_startup_rotation_adjustment_(display_startup_rotation_adjustment),
       presentation_binding_(this),
       weak_factory_(this) {
-  renderer_.SetCamera(camera_);
+  layer_.SetCamera(camera_);
+  layer_.SetScene(scene_);
   layer_.SetRenderer(renderer_);
   scene_.AddChild(root_node_);
   root_node_.AddChild(view_holder_node_);

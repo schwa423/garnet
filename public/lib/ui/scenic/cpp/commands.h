@@ -44,12 +44,11 @@ fuchsia::ui::gfx::Command NewCreateBufferCmd(uint32_t id, uint32_t memory_id,
 fuchsia::ui::gfx::Command NewCreateCompositorCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateDisplayCompositorCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateLayerStackCmd(uint32_t id);
-fuchsia::ui::gfx::Command NewCreateLayerCmd(uint32_t id);
+fuchsia::ui::gfx::Command NewCreateSceneLayerCmd(uint32_t id);
 
 fuchsia::ui::gfx::Command NewCreateSceneCmd(uint32_t id);
-fuchsia::ui::gfx::Command NewCreateCameraCmd(uint32_t id, uint32_t scene_id);
-fuchsia::ui::gfx::Command NewCreateStereoCameraCmd(uint32_t id,
-                                                   uint32_t scene_id);
+fuchsia::ui::gfx::Command NewCreateCameraCmd(uint32_t id);
+fuchsia::ui::gfx::Command NewCreateStereoCameraCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateRendererCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateAmbientLightCmd(uint32_t id);
 fuchsia::ui::gfx::Command NewCreateDirectionalLightCmd(uint32_t id);
@@ -213,8 +212,10 @@ fuchsia::ui::gfx::Command NewRemoveLayerCmd(uint32_t layer_stack_id,
 fuchsia::ui::gfx::Command NewRemoveAllLayersCmd(uint32_t layer_stack_id);
 fuchsia::ui::gfx::Command NewSetLayerStackCmd(uint32_t compositor_id,
                                               uint32_t layer_stack_id);
-fuchsia::ui::gfx::Command NewSetRendererCmd(uint32_t layer_id,
+fuchsia::ui::gfx::Command NewSetRendererCmd(uint32_t scene_layer_id,
                                             uint32_t renderer_id);
+fuchsia::ui::gfx::Command NewSetSceneCmd(uint32_t scene_layer_id,
+                                         uint32_t scene_id);
 fuchsia::ui::gfx::Command NewSetRendererParamCmd(
     uint32_t renderer_id, fuchsia::ui::gfx::RendererParam param);
 fuchsia::ui::gfx::Command NewSetSizeCmd(uint32_t node_id, const float size[2]);

@@ -10,6 +10,7 @@
 #include "garnet/lib/ui/gfx/resources/compositor/display_compositor.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer_stack.h"
+#include "garnet/lib/ui/gfx/resources/compositor/scene_layer.h"
 #include "garnet/lib/ui/gfx/resources/gpu_image.h"
 #include "garnet/lib/ui/gfx/resources/gpu_memory.h"
 #include "garnet/lib/ui/gfx/resources/host_image.h"
@@ -71,9 +72,7 @@ void MeshShape::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 
 void Material::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 
-void Compositor::Accept(ResourceVisitor* visitor) {
-  visitor->Visit(this);
-}
+void Compositor::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 
 void DisplayCompositor::Accept(ResourceVisitor* visitor) {
   visitor->Visit(this);
@@ -82,6 +81,8 @@ void DisplayCompositor::Accept(ResourceVisitor* visitor) {
 void LayerStack::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 
 void Layer::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
+
+void SceneLayer::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 
 void Scene::Accept(ResourceVisitor* visitor) { visitor->Visit(this); }
 
