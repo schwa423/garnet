@@ -7,6 +7,8 @@
 
 #include <lib/fit/function.h>
 
+#include "garnet/lib/ui/gfx/engine/hardware_layer_assignments.h"
+
 #include "lib/fxl/memory/ref_ptr.h"
 
 namespace escher {
@@ -30,9 +32,9 @@ class Swapchain {
   // - the framebuffer to render into.
   // - the semaphore to wait upon before rendering into the framebuffer
   // - the semaphore to signal when rendering is complete.
-  using DrawCallback =
-      fit::function<void(const escher::ImagePtr&, const escher::SemaphorePtr&,
-                         const escher::SemaphorePtr&)>;
+  using DrawCallback = fit::function<void(
+      const escher::ImagePtr&, const HardwareLayerAssignments::Item&,
+      const escher::SemaphorePtr&, const escher::SemaphorePtr&)>;
 
   // Returns false if the frame could not be drawn.  Otherwise,
   //   1. Registers itself with |frame_timings| using
@@ -40,7 +42,8 @@ class Swapchain {
   //   2. Invokes |draw_callback| to draw the frame.
   //   3. Eventually invokes FrameTimings::OnFrameFinishedRendering() and
   //      FrameTimings::OnFramePresented() on |frame_timings|.
-  virtual bool DrawAndPresentFrame(const FrameTimingsPtr& frame_timings,
+  virtual bool DrawAndPresentFrame(const FrameTimingsPtr& frame,
+                                   const HardwareLayerAssignments& hla,
                                    DrawCallback draw_callback) = 0;
 
   virtual ~Swapchain() = default;

@@ -70,6 +70,8 @@ source_set("gfx") {
     "displays/display_watcher.h",
     "engine/engine.cc",
     "engine/engine.h",
+    "engine/engine_renderer.cc",
+    "engine/engine_renderer.h",
     "engine/frame_scheduler.cc",
     "engine/frame_scheduler.h",
     "engine/frame_timings.cc",

@@ -237,7 +237,17 @@ void VulkanDisplaySwapchain::InitializeVulkanSwapchain(
 }
 
 bool VulkanDisplaySwapchain::DrawAndPresentFrame(
-    const FrameTimingsPtr& frame_timings, DrawCallback draw_callback) {
+    const FrameTimingsPtr& frame_timings, const HardwareLayerAssignments& hla,
+    DrawCallback draw_callback) {
+  FXL_DCHECK(hla.swapchain == this);
+  if (hla.empty()) {
+    // No layers specified to draw.
+    return false;
+  }
+  // Vulkan swapchain doesn't have any notion of hardware layers.
+  FXL_DCHECK(hla.items.size() == 1 && hla.items[0].hardware_layer_id == 0);
+  auto& hla_item = hla.items[0];
+
   // TODO(MZ-260): replace Vulkan swapchain with Magma C ABI calls, and use
   // EventTimestamper::Wait to notify |frame| when the frame is finished
   // rendering, and when it is presented.
@@ -275,8 +285,8 @@ bool VulkanDisplaySwapchain::DrawAndPresentFrame(
 
   // Render the scene.  The Renderer will wait for acquireNextImageKHR() to
   // signal the semaphore.
-  draw_callback(swapchain_.images[swapchain_index], image_available_semaphore,
-                render_finished_semaphore);
+  draw_callback(swapchain_.images[swapchain_index], hla_item,
+                image_available_semaphore, render_finished_semaphore);
 
   // When the image is completely rendered, present it.
   TRACE_DURATION("gfx", "VulkanDisplaySwapchain::DrawAndPresent() present");

@@ -13,6 +13,7 @@
 #include <trace/event.h>
 #include <zx/time.h>
 
+#include "garnet/lib/ui/gfx/engine/engine_renderer.h"
 #include "garnet/lib/ui/gfx/engine/frame_scheduler.h"
 #include "garnet/lib/ui/gfx/engine/frame_timings.h"
 #include "garnet/lib/ui/gfx/engine/session.h"
@@ -25,8 +26,6 @@
 #include "garnet/lib/ui/scenic/session.h"
 #include "lib/escher/impl/vulkan_utils.h"
 #include "lib/escher/renderer/batch_gpu_uploader.h"
-#include "lib/escher/renderer/paper_renderer.h"
-#include "lib/escher/renderer/shadow_map_renderer.h"
 
 namespace scenic_impl {
 namespace gfx {
@@ -61,10 +60,7 @@ Engine::Engine(DisplayManager* display_manager,
                escher::EscherWeakPtr weak_escher)
     : display_manager_(display_manager),
       escher_(std::move(weak_escher)),
-      paper_renderer_(escher::PaperRenderer::New(escher_)),
-      shadow_renderer_(
-          escher::ShadowMapRenderer::New(escher_, paper_renderer_->model_data(),
-                                         paper_renderer_->model_renderer())),
+      engine_renderer_(std::make_unique<EngineRenderer>(escher_)),
       image_factory_(std::make_unique<escher::SimpleImageFactory>(
           escher()->resource_recycler(), escher()->gpu_allocator())),
       rounded_rect_factory_(
@@ -79,8 +75,6 @@ Engine::Engine(DisplayManager* display_manager,
   FXL_DCHECK(escher_);
 
   InitializeFrameScheduler();
-
-  paper_renderer_->set_sort_by_pipeline(false);
 }
 
 Engine::Engine(
@@ -134,52 +128,105 @@ std::unique_ptr<Swapchain> Engine::CreateDisplaySwapchain(Display* display) {
 #endif
 }
 
+bool Engine::UpdateSessions(uint64_t presentation_time,
+                            uint64_t presentation_interval,
+                            uint64_t frame_number_for_tracing) {
+  if (display_manager_->default_display() &&
+      display_manager_->default_display()->is_test_display()) {
+    return session_manager_->ApplyScheduledSessionUpdates(
+        presentation_time, presentation_interval);
+  }
+  auto gpu_uploader =
+      escher::BatchGpuUploader::New(escher_, frame_number_for_tracing);
+  command_context_.batch_gpu_uploader = gpu_uploader.get();
+  command_context_.MakeValid();
+
+  const bool has_updates = session_manager_->ApplyScheduledSessionUpdates(
+      presentation_time, presentation_interval);
+
+  // Submit regardless of whether or not there are updates to release the
+  // underlying CommandBuffer so the pool and sequencer don't stall out.
+  // TODO(ES-115) to remove this restriction.
+  command_context_.batch_gpu_uploader->Submit(escher::SemaphorePtr());
+
+  // Invalidate the commands' context.
+  command_context_.Invalidate();
+
+  return has_updates;
+}
+
 bool Engine::RenderFrame(const FrameTimingsPtr& timings,
                          uint64_t presentation_time,
                          uint64_t presentation_interval, bool force_render) {
   TRACE_DURATION("gfx", "RenderFrame", "frame_number", timings->frame_number(),
                  "time", presentation_time, "interval", presentation_interval);
 
-  uint64_t trace_number = timings.get() ? timings->frame_number() : 0;
-  bool has_updates = false;
-  if (display_manager_->default_display() &&
-      display_manager_->default_display()->is_test_display()) {
-    has_updates = session_manager_->ApplyScheduledSessionUpdates(
-        presentation_time, presentation_interval);
-  } else {
-    auto gpu_uploader = escher::BatchGpuUploader::New(escher_, trace_number);
-    command_context_.batch_gpu_uploader = gpu_uploader.get();
-    command_context_.MakeValid();
-
-    has_updates = session_manager_->ApplyScheduledSessionUpdates(
-        presentation_time, presentation_interval);
-
-    // Submit regardless of whether or not there are updates to release the
-    // underlying CommandBuffer so the pool and sequencer don't stall out.
-    // TODO(ES-115) to remove this restriction.
-    command_context_.batch_gpu_uploader->Submit(escher::SemaphorePtr());
-
-    // Invalidate the commands' context.
-    command_context_.Invalidate();
-  }
-
-  if (!has_updates && !force_render) {
+  if (!UpdateSessions(presentation_time, presentation_interval,
+                      timings ? timings->frame_number() : 0) &&
+      !force_render) {
     return false;
   }
 
   UpdateAndDeliverMetrics(presentation_time);
 
-  bool frame_drawn = false;
+  std::vector<HardwareLayerAssignments> hlas;
   for (auto& compositor : compositors_) {
-    frame_drawn |= compositor->DrawFrame(timings, paper_renderer_.get(),
-                                         shadow_renderer_.get());
+    // TODO(SCN-???): this should be a separate object who is responsible for
+    // looking at the whole scene and optimizing the assignment of gfx Layers to
+    // hardware layers.
+    auto hla = compositor->GetHardwareLayerAssignments();
+    if (!hla.empty()) {
+      hlas.push_back(std::move(hla));
+
+      if (FXL_VLOG_IS_ON(3)) {
+        std::ostringstream output;
+        DumpVisitor visitor(output);
+        compositor->Accept(&visitor);
+        FXL_VLOG(3) << "Compositor dump\n" << output.str();
+      }
+    }
+  }
+  if (hlas.empty()) {
+    // No frame was drawn.
+    return false;
   }
 
-  // Technically, we should be able to do this only when frame_drawn == true.
-  // But the cost is negligible, so do it always.
-  CleanupEscher();
+  escher::FramePtr frame =
+      escher()->NewFrame("Gfx Engine RenderFrame", timings->frame_number());
 
-  return frame_drawn;
+  bool success = true;
+  for (size_t i = 0; i < hlas.size(); ++i) {
+    const bool is_last_hla = (i == hlas.size() - 1);
+    HardwareLayerAssignments& hla = hlas[i];
+
+    success &= hla.swapchain->DrawAndPresentFrame(
+        timings, hla,
+        [is_last_hla, &frame, engine_renderer{engine_renderer_.get()}](
+            const escher::ImagePtr& output_image,
+            const HardwareLayerAssignments::Item hla_item,
+            const escher::SemaphorePtr& acquire_semaphore,
+            const escher::SemaphorePtr& frame_done_semaphore) {
+          engine_renderer->RenderLayers(frame, output_image, hla_item.layers);
+          if (!is_last_hla) {
+            // TODO(before-submit): what to do with acquire_semaphore?
+            // Probably Swapchain should just add it to the Frame's current
+            // CommandBuffer, rather than passing it here?
+            frame->SubmitPartialFrame(frame_done_semaphore);
+          } else {
+            frame->EndFrame(frame_done_semaphore, nullptr);
+          }
+        });
+  }
+  if (!success) {
+    // TODO(before-submit): what is the proper behavior when some swapchains
+    // are displayed and others aren't?  This isn't currently an issue because
+    // there is only one Compositor.
+    FXL_DCHECK(hlas.size() == 1);
+    return false;
+  }
+
+  CleanupEscher();
+  return true;
 }
 
 void Engine::AddCompositor(Compositor* compositor) {

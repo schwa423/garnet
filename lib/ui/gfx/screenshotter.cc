@@ -10,6 +10,7 @@
 
 #include <lib/zx/time.h>
 
+#include "garnet/lib/ui/gfx/engine/engine_renderer.h"
 #include "garnet/lib/ui/gfx/resources/compositor/compositor.h"
 #include "garnet/lib/ui/gfx/resources/compositor/layer.h"
 #include "garnet/lib/ui/scenic/scenic.h"
@@ -93,11 +94,19 @@ void Screenshotter::TakeScreenshot(
   image_info.memory_flags = vk::MemoryPropertyFlagBits::eHostVisible;
   image_info.tiling = vk::ImageTiling::eLinear;
 
+  // TODO(before-submit): don't use image cache.
   escher::ImagePtr image = escher->image_cache()->NewImage(image_info);
-  auto frame_done_semaphore = escher::Semaphore::New(escher->vk_device());
-  compositor->DrawToImage(engine->paper_renderer(), engine->shadow_renderer(),
-                          image, frame_done_semaphore);
+  escher::FramePtr frame = escher->NewFrame("Scenic Compositor", 0);
 
+  std::vector<Layer*> drawable_layers = compositor->GetDrawableLayers();
+  engine->renderer()->RenderLayers(frame, image, drawable_layers);
+
+  // NOTE: theres no point to this semaphore if nothing is going to wait on it.
+  auto frame_done_semaphore = escher::Semaphore::New(escher->vk_device());
+  frame->EndFrame(frame_done_semaphore, nullptr);
+
+  // NOTE: this could be done as part of the same Frame above, would that be
+  // preferable?
   vk::Queue queue = escher->command_buffer_pool()->queue();
   auto* command_buffer = escher->command_buffer_pool()->GetCommandBuffer();
 
@@ -109,7 +118,8 @@ void Screenshotter::TakeScreenshot(
                             std::move(done_callback));
       }));
 
-  // Force the command buffer to retire so that the submitted commands will run.
+  // Force the command buffer to retire to guarantee that |done_callback| will
+  // be called in a timely fashion.
   engine->CleanupEscher();
 }
 

@@ -325,7 +325,10 @@ std::unique_ptr<DisplaySwapchain::FrameRecord> DisplaySwapchain::NewFrameRecord(
 }
 
 bool DisplaySwapchain::DrawAndPresentFrame(const FrameTimingsPtr& frame_timings,
+                                           const HardwareLayerAssignments& hla,
                                            DrawCallback draw_callback) {
+  FXL_DCHECK(hla.swapchain == this);
+
   // Find the next framebuffer to render into, and other corresponding data.
   auto& buffer = swapchain_buffers_[next_frame_index_];
 
@@ -354,10 +357,24 @@ bool DisplaySwapchain::DrawAndPresentFrame(const FrameTimingsPtr& frame_timings,
   outstanding_frame_count_++;
 
   // Render the scene.
-  {
+  size_t num_hardware_layers = hla.items.size();
+  // TODO(before-submit): handle more hardware layers.
+  FXL_DCHECK(num_hardware_layers == 1);
+  // TODO(before-submit): we'd like to validate that the layer ID is supported
+  // by the display/display-controller, but the DisplayManager API doesn't
+  // currently expose it, and rather than hack in an accessor for |layer_id_|
+  // we should fix this "properly", whatever that means.
+  // FXL_DCHECK(hla.items[0].hardware_layer_id is supported by display);
+  for (size_t i = 0; i < num_hardware_layers; ++i) {
     TRACE_DURATION("gfx", "DisplaySwapchain::DrawAndPresent() draw");
-    draw_callback(buffer.escher_image, escher::SemaphorePtr(),
-                  frame_record->render_finished_escher_semaphore);
+    // TODO(before-submit): double-check that we're doing this sanely.  Is it OK
+    // to have a separate one for each Swapchain?
+    escher::SemaphorePtr render_finished_escher_semaphore =
+        (i + 1 == num_hardware_layers)
+            ? frame_record->render_finished_escher_semaphore
+            : escher::SemaphorePtr();
+    draw_callback(buffer.escher_image, hla.items[i], escher::SemaphorePtr(),
+                  render_finished_escher_semaphore);
   }
 
   // When the image is completely rendered, present it.

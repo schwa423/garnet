@@ -33,6 +33,7 @@ namespace scenic_impl {
 namespace gfx {
 
 class Compositor;
+class EngineRenderer;
 class Session;
 class SessionHandler;
 class View;
@@ -52,9 +53,7 @@ struct CommandContext {
 
  private:
   friend class Engine;
-  void MakeValid() {
-    is_valid = batch_gpu_uploader != nullptr;
-  }
+  void MakeValid() { is_valid = batch_gpu_uploader != nullptr; }
 
   bool is_valid = false;
 };
@@ -68,11 +67,6 @@ class Engine : public UpdateScheduler, private FrameSchedulerDelegate {
   Engine(DisplayManager* display_manager, escher::EscherWeakPtr escher);
 
   ~Engine() override;
-
-  escher::PaperRenderer* paper_renderer() { return paper_renderer_.get(); }
-  escher::ShadowMapRenderer* shadow_renderer() {
-    return shadow_renderer_.get();
-  }
 
   DisplayManager* display_manager() const { return display_manager_; }
   escher::Escher* escher() const { return escher_.get(); }
@@ -108,6 +102,8 @@ class Engine : public UpdateScheduler, private FrameSchedulerDelegate {
   SessionManager* session_manager() { return session_manager_.get(); }
 
   FrameScheduler* frame_scheduler() { return frame_scheduler_.get(); }
+
+  EngineRenderer* renderer() { return engine_renderer_.get(); }
 
   // |UpdateScheduler|
   //
@@ -168,6 +164,12 @@ class Engine : public UpdateScheduler, private FrameSchedulerDelegate {
   void InitializeFrameScheduler();
   void InitializeShaderFs();
 
+  // Apply updates to all sessions who have updates and have acquired all
+  // fences.  Return true if there were any updates applied.
+  bool UpdateSessions(uint64_t presentation_time,
+                      uint64_t presentation_interval,
+                      uint64_t frame_number_for_tracing);
+
   // Update and deliver metrics for all nodes which subscribe to metrics events.
   void UpdateAndDeliverMetrics(uint64_t presentation_time);
 
@@ -179,8 +181,8 @@ class Engine : public UpdateScheduler, private FrameSchedulerDelegate {
 
   DisplayManager* const display_manager_;
   const escher::EscherWeakPtr escher_;
-  escher::PaperRendererPtr paper_renderer_;
-  escher::ShadowMapRendererPtr shadow_renderer_;
+
+  std::unique_ptr<EngineRenderer> engine_renderer_;
 
   ResourceLinker resource_linker_;
   ViewLinker view_linker_;
