@@ -176,6 +176,12 @@ PaperShapeCacheEntry ProcessTriangleMesh2d(
 
 }  // namespace
 
+void PaperShapeCacheEntry::operator=(const PaperShapeCacheEntry& other) {
+  mesh = other.mesh;
+  num_indices = other.num_indices;
+  num_shadow_volume_indices = other.num_shadow_volume_indices;
+}
+
 PaperShapeCache::PaperShapeCache(EscherWeakPtr escher,
                                  const PaperRendererConfig& config)
     : escher_(std::move(escher)), shadow_type_(config.shadow_type) {}
@@ -184,9 +190,11 @@ PaperShapeCache::~PaperShapeCache() { FXL_DCHECK(!uploader_); }
 
 void PaperShapeCache::BeginFrame(BatchGpuUploader* uploader,
                                  uint64_t frame_number) {
+  TRACE_DURATION("gfx", "PaperShapeCache::BeginFrame");
   FXL_DCHECK(uploader && !uploader_ && frame_number >= frame_number_);
   uploader_ = uploader;
   frame_number_ = frame_number;
+  cache_.BeginFrame();
 }
 
 void PaperShapeCache::EndFrame() {
@@ -201,8 +209,6 @@ void PaperShapeCache::EndFrame() {
   cache_hit_count_ = 0;
   cache_hit_after_plane_culling_count_ = 0;
   cache_miss_count_ = 0;
-
-  TrimCache();
 }
 
 void PaperShapeCache::SetConfig(const PaperRendererConfig& config) {
@@ -215,7 +221,7 @@ void PaperShapeCache::SetConfig(const PaperRendererConfig& config) {
   // NOTE: could optimize this to retain cached meshes in some cases.  For
   // example, switching shadow types kShadowMap <--> kNone.  For now we just
   // blow away the cache any time there is a change.
-  cache_.clear();
+  cache_.Clear();
 }
 
 const PaperShapeCacheEntry& PaperShapeCache::GetRoundedRectMesh(
@@ -370,12 +376,15 @@ const PaperShapeCacheEntry& PaperShapeCache::GetShapeMesh(
   // sorting the planes if desired.  For example, if the same planes are
   // provided in a different order, the cache would fail to find the pre-clipped
   // mesh.
-  if (auto* entry = FindEntry(lookup_hash)) {
+  auto [entry, found] = cache_.Obtain(lookup_hash);
+  if (found) {
     ++cache_hit_count_;
     return *entry;
   }
 
-  // There are two separate optimizations to perform against the bounding box:
+  // There are two separate optimizations to perform against
+  // TRACE_DURATION("gfx", "PaperShapeCache::GetShapeMesh[mesh_generator]");the
+  // bounding box:
   //   1) If a plane clips all 8 corners then don't bother considering the other
   //      planes.  Return nullptr because there is nothing to render.
   //   2) If a plane does not clip any of the 8 corners, then proceed to the
@@ -389,9 +398,7 @@ const PaperShapeCacheEntry& PaperShapeCache::GetShapeMesh(
     // Cache a null MeshPtr, so that a subsequent lookup won't have to do
     // the CPU work of testing planes against the bounding box.
     ++cache_hit_count_;
-
-    AddEntry(lookup_hash, kNullCacheEntry);
-    return kNullCacheEntry;
+    return *entry;
   }
 
   // If some of the planes were culled, recompute the lookup hash and try again.
@@ -425,8 +432,16 @@ const PaperShapeCacheEntry& PaperShapeCache::GetShapeMesh(
       h.struc(unculled_clip_planes[i]);
     }
     lookup_hash2 = h.value();
+  }
 
-    if (auto* entry = FindEntry(lookup_hash2)) {
+  PaperShapeCacheEntry* entry2;
+  bool found2;
+  if (lookup_hash2 == lookup_hash) {
+    entry2 = entry;
+    found2 = false;
+  } else {
+    std::tie(entry2, found2) = cache_.Obtain(lookup_hash2);
+    if (found2) {
       // NOTE: FXL_DCHECK(entry->mesh) might seem reasonable here, but there
       // still is a possibility that the generated mesh will be completely
       // clipped.
@@ -435,7 +450,7 @@ const PaperShapeCacheEntry& PaperShapeCache::GetShapeMesh(
       // returning it, re-cache it under the original lookup key so that it can
       // be looked up more efficiently next time.
       ++cache_hit_after_plane_culling_count_;
-      AddEntry(lookup_hash, *entry);
+      *entry = *entry2;
 
       // TODO(ES-142): by caching under |lookup_hash| here, there is the
       // possibility of pathological behavior under "stop and go" motion.  For
@@ -445,7 +460,6 @@ const PaperShapeCacheEntry& PaperShapeCache::GetShapeMesh(
       // evicted.  A solution might a variant AddEntry(key, key2, mesh) such
       // that whenever a mesh is looked up via |key|, the timestamp for |key2|
       // is also updated.
-
       return *entry;
     }
   }
@@ -457,13 +471,9 @@ const PaperShapeCacheEntry& PaperShapeCache::GetShapeMesh(
     new_entry = mesh_generator(unculled_clip_planes, num_unculled_clip_planes);
   }
 
-  AddEntry(lookup_hash, new_entry);
-  if (lookup_hash2 != lookup_hash) {
-    AddEntry(lookup_hash2, new_entry);
-  }
-  // Slightly inefficient to look up the newly-inserted entry, but nothing
-  // compared to what we just did to create/upload the new mesh.
-  return *FindEntry(lookup_hash);
+  *entry = new_entry;
+  *entry2 = new_entry;
+  return *entry;
 }
 
 bool PaperShapeCache::CullPlanesAgainstBoundingBox(
@@ -483,43 +493,6 @@ bool PaperShapeCache::CullPlanesAgainstBoundingBox(
     }
   }
   return false;
-}
-
-PaperShapeCacheEntry* PaperShapeCache::FindEntry(const Hash& hash) {
-  auto it = cache_.find(hash);
-  if (it != cache_.end()) {
-    it->second.last_touched_frame = frame_number_;
-    return &it->second;
-  }
-  return nullptr;
-}
-
-void PaperShapeCache::AddEntry(const Hash& hash, PaperShapeCacheEntry entry) {
-  auto it = cache_.find(hash);
-  if (it != cache_.end()) {
-    FXL_DCHECK(false) << "CacheEntry already exists.";
-    return;
-  }
-  FXL_DCHECK(entry.last_touched_frame <= frame_number_);
-  entry.last_touched_frame = frame_number_;
-  cache_.insert({hash, std::move(entry)});
-}
-
-// TODO(SCN-957): rather than rolling our own ad-hoc cache eviction strategy,
-// (which is already a performance bottleneck) we should plug in a reusable
-// cache that performs better and is well-tested.
-void PaperShapeCache::TrimCache() {
-  TRACE_DURATION("gfx", "PaperShapeCache::TrimCache", "num_entries",
-                 cache_.size());
-  for (auto it = cache_.begin(); it != cache_.end();) {
-    if (frame_number_ - it->second.last_touched_frame >=
-        kNumFramesBeforeEviction) {
-      TRACE_DURATION("gfx", "PaperShapeCache::TrimCache[erase]");
-      it = cache_.erase(it);
-    } else {
-      ++it;
-    }
-  }
 }
 
 }  // namespace escher

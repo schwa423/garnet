@@ -185,6 +185,7 @@ std::vector<UniformBinding> PaperDrawCallFactory::BeginFrame(
     const FramePtr& frame, PaperScene* scene,
     PaperTransformStack* transform_stack, PaperRenderQueue* render_queue,
     PaperShapeCache* shape_cache, const Camera& camera) {
+  TRACE_DURATION("gfx", "PaperDrawCallFactory::BeginFrame");
   FXL_DCHECK(!frame_ && frame && transform_stack && render_queue &&
              shape_cache);
   frame_ = frame;

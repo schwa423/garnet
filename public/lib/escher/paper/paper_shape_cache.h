@@ -11,7 +11,7 @@
 #include "lib/escher/forward_declarations.h"
 #include "lib/escher/geometry/types.h"
 #include "lib/escher/paper/paper_renderer_config.h"
-#include "lib/escher/util/hash_map.h"
+#include "lib/escher/util/hash_cache.h"
 
 namespace escher {
 
@@ -23,20 +23,21 @@ struct RoundedRectSpec;
 // This allows us to use the same mesh for two different purposes ("regular"
 // geometry and extruded shadow volume geometry).
 // NOTE: messy-ish but OK for now because encapsulated in |PaperRenderer2|.
-struct PaperShapeCacheEntry {
+struct PaperShapeCacheEntry : public HashCacheItem<PaperShapeCacheEntry> {
   uint64_t last_touched_frame = 0;
   MeshPtr mesh;
   uint32_t num_indices = 0;
   uint32_t num_shadow_volume_indices = 0;
 
   explicit operator bool() const { return mesh.get() != nullptr; }
+  void operator=(const PaperShapeCacheEntry& other);
 };
 
 // Generates and caches clipped triangle meshes that match the requested shape
 // specification.
 class PaperShapeCache {
  public:
-  static constexpr size_t kNumFramesBeforeEviction = 3;
+  static constexpr size_t kFramesUntilEviction = 4;
 
   explicit PaperShapeCache(EscherWeakPtr escher,
                            const PaperRendererConfig& config);
@@ -110,21 +111,12 @@ class PaperShapeCache {
                                     plane3* unculled_planes_out,
                                     size_t* num_planes_inout);
 
-  // Called from EndFrame(); evicts all entries that have not been touched for
-  // kNumFramesBeforeEviction.
-  void TrimCache();
-
   enum class ShapeType { kRect, kRoundedRect, kCircle };
 
-  // Return the PaperShapeCacheEntry corresponding to the hash, or nullptr if
-  // none such is present in the cache.
-  PaperShapeCacheEntry* FindEntry(const Hash& hash);
-
-  // Entry must not already exist.
-  void AddEntry(const Hash& hash, PaperShapeCacheEntry entry);
-
   const EscherWeakPtr escher_;
-  HashMap<Hash, PaperShapeCacheEntry> cache_;
+  HashCache<PaperShapeCacheEntry, DefaultObjectPoolPolicy<PaperShapeCacheEntry>,
+            kFramesUntilEviction>
+      cache_;
   BatchGpuUploader* uploader_ = nullptr;
   uint64_t frame_number_ = 0;
 
