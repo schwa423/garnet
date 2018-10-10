@@ -19,7 +19,7 @@ VK_TEST(BatchGpuUploader, CreateDestroyUploader) {
   {
     BatchGpuUploaderPtr uploader = BatchGpuUploader::New(escher);
     // BatchGpuUploader must be submitted before it is destroyed.
-    uploader->Submit(SemaphorePtr());
+    uploader->Submit();
   }
 
   escher->vk_device().waitIdle();
@@ -31,7 +31,7 @@ VK_TEST(BatchGpuUploader, DummyUploaderForTests) {
   // without crashing for unittests.
   BatchGpuUploaderPtr uploader = BatchGpuUploader::New(EscherWeakPtr());
   // Submit should also not crash.
-  uploader->Submit(SemaphorePtr());
+  uploader->Submit();
 }
 
 VK_TEST(BatchGpuUploader, AcquireSubmitWriter) {
@@ -42,7 +42,7 @@ VK_TEST(BatchGpuUploader, AcquireSubmitWriter) {
   uploader->PostWriter(std::move(writer));
 
   // BatchGpuUploader must be submitted before it is destroyed.
-  uploader->Submit(SemaphorePtr());
+  uploader->Submit();
   escher->vk_device().waitIdle();
   EXPECT_TRUE(escher->Cleanup());
 }
@@ -55,7 +55,7 @@ VK_TEST(BatchGpuUploader, AcquireSubmitReader) {
   uploader->PostReader(std::move(reader), [](BufferPtr) {});
 
   // BatchGpuUploader must be submitted before it is destroyed.
-  uploader->Submit(SemaphorePtr());
+  uploader->Submit();
   escher->vk_device().waitIdle();
   EXPECT_TRUE(escher->Cleanup());
 }
@@ -79,8 +79,7 @@ VK_TEST(BatchGpuUploader, AcquireSubmitMultipleWriters) {
   EXPECT_FALSE(escher->Cleanup());
 
   bool batched_upload_done = false;
-  uploader->Submit(SemaphorePtr(),
-                   [&batched_upload_done]() { batched_upload_done = true; });
+  uploader->Submit([&batched_upload_done]() { batched_upload_done = true; });
   // Trigger Cleanup, which triggers the callback on the submitted command
   // buffer.
   escher->vk_device().waitIdle();
@@ -107,8 +106,7 @@ VK_TEST(BatchGpuUploader, AcquireSubmitMultipleReaders) {
   EXPECT_FALSE(escher->Cleanup());
 
   bool batched_upload_done = false;
-  uploader->Submit(SemaphorePtr(),
-                   [&batched_upload_done]() { batched_upload_done = true; });
+  uploader->Submit([&batched_upload_done]() { batched_upload_done = true; });
   // Trigger Cleanup, which triggers the callback on the submitted command
   // buffer.
   escher->vk_device().waitIdle();
@@ -140,7 +138,7 @@ VK_TEST(BatchGpuUploader, WriteBuffer) {
   // Posting and submitting should succeed.
   uploader->PostWriter(std::move(writer));
 
-  uploader->Submit(SemaphorePtr());
+  uploader->Submit();
   escher->vk_device().waitIdle();
   EXPECT_TRUE(escher->Cleanup());
 }
@@ -154,7 +152,7 @@ VK_TEST(BatchGpuUploader, DISABLED_WriterNotPostedFails) {
   auto writer = uploader->AcquireWriter(256);
 
   // Submit should fail since it does not have the command buffer to submit.
-  EXPECT_DEATH_IF_SUPPORTED(uploader->Submit(SemaphorePtr()), "");
+  EXPECT_DEATH_IF_SUPPORTED(uploader->Submit(), "");
 }
 
 VK_TEST(BatchGpuUploader, DISABLED_WriterPostedToWrongUploaderFails) {
@@ -171,10 +169,10 @@ VK_TEST(BatchGpuUploader, DISABLED_WriterPostedToWrongUploaderFails) {
   EXPECT_DEATH_IF_SUPPORTED(uploader->PostWriter(std::move(writer)), "");
 
   // New uploader should be able to be successfully submitted and cleaned up.
-  uploader2->Submit(SemaphorePtr());
+  uploader2->Submit();
   // Original uploader did not have writer posted, and should fail to submit or
   // be destroyed.
-  EXPECT_DEATH_IF_SUPPORTED(uploader->Submit(SemaphorePtr()), "");
+  EXPECT_DEATH_IF_SUPPORTED(uploader->Submit(), "");
 }
 
 VK_TEST(BatchGpuUploader, ReadImageTest) {
@@ -199,7 +197,7 @@ VK_TEST(BatchGpuUploader, ReadImageTest) {
   uploader->PostReader(std::move(reader), [&read_image_done](BufferPtr buffer) {
     read_image_done = true;
   });
-  uploader->Submit(SemaphorePtr(), []() {});
+  uploader->Submit([]() {});
 
   escher->vk_device().waitIdle();
   EXPECT_TRUE(escher->Cleanup());
@@ -232,8 +230,7 @@ VK_TEST(BatchGpuUploader, ReadBufferTest) {
     uploader->PostWriter(std::move(writer));
 
     bool write_buffer_done = false;
-    uploader->Submit(SemaphorePtr(),
-                     [&write_buffer_done]() { write_buffer_done = true; });
+    uploader->Submit([&write_buffer_done]() { write_buffer_done = true; });
 
     escher->vk_device().waitIdle();
     EXPECT_TRUE(escher->Cleanup());
@@ -257,7 +254,7 @@ VK_TEST(BatchGpuUploader, ReadBufferTest) {
 
                          read_buffer_done = true;
                        });
-  uploader->Submit(SemaphorePtr(), []() {});
+  uploader->Submit([]() {});
 
   escher->vk_device().waitIdle();
   EXPECT_TRUE(escher->Cleanup());

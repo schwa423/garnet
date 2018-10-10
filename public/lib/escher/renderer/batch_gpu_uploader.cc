@@ -152,9 +152,9 @@ void BatchGpuUploader::Initialize() {
   // directly, rather than use a frame to manage GPU submits, when command
   // buffer recycling is refactored.
   if (!frame_) {
-      frame_ = escher_->NewFrame("Gpu Uploader", frame_trace_number_,
-                                 /* enable_gpu_logging */ false,
-                                 CommandBuffer::Type::kTransfer);
+    frame_ = escher_->NewFrame("Gpu Uploader", frame_trace_number_,
+                               /* enable_gpu_logging */ false,
+                               CommandBuffer::Type::kTransfer);
   }
   FXL_DCHECK(frame_);
   if (!buffer_cache_) {
@@ -255,11 +255,10 @@ void BatchGpuUploader::PostReader(
   reader.reset();
 }
 
-void BatchGpuUploader::Submit(const escher::SemaphorePtr& upload_done_semaphore,
-                              const std::function<void()>& callback) {
+SemaphorePtr BatchGpuUploader::Submit(const std::function<void()>& callback) {
   if (dummy_for_tests_) {
     FXL_LOG(WARNING) << "Dummy BatchGpuUploader for tests, skip submit";
-    return;
+    return SemaphorePtr();
   }
 
   // TODO(SCN-846) Relax this check once Writers are backed by secondary
@@ -269,11 +268,12 @@ void BatchGpuUploader::Submit(const escher::SemaphorePtr& upload_done_semaphore,
 
   if (!is_initialized_) {
     // This uploader was never used, nothing to submit.
-    return;
+    return SemaphorePtr();
   }
   FXL_DCHECK(frame_);
 
   TRACE_DURATION("gfx", "BatchGpuUploader::SubmitBatch");
+  auto upload_done_semaphore = Semaphore::New(escher_->vk_device());
   frame_->EndFrame(upload_done_semaphore,
                    [callback, read_callbacks = std::move(read_callbacks_)]() {
                      for (auto& pair : read_callbacks) {
@@ -284,6 +284,7 @@ void BatchGpuUploader::Submit(const escher::SemaphorePtr& upload_done_semaphore,
                      callback();
                    });
   frame_ = nullptr;
+  return upload_done_semaphore;
 }
 
 }  // namespace escher
