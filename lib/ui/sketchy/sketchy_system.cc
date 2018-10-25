@@ -28,4 +28,6 @@ SketchyCommandDispatcher::~SketchyCommandDispatcher() = default;
 void SketchyCommandDispatcher::DispatchCommand(
     fuchsia::ui::scenic::Command command) {}
 
+void SketchyCommandDispatcher::OnPrepareForShutdown() {}
+
 }  // namespace scenic_impl

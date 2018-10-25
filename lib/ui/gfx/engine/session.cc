@@ -81,15 +81,18 @@ fidl::VectorPtr<::fuchsia::ui::gfx::Hit> WrapHits(
 }
 }  // anonymous namespace
 
-Session::Session(SessionId id, Engine* engine, EventReporter* event_reporter,
-                 ErrorReporter* error_reporter)
+Session::Session(SessionId id, Engine* engine,
+                 fit::function<void()> shutdown_callback,
+                 EventReporter* event_reporter, ErrorReporter* error_reporter)
     : id_(id),
       engine_(engine),
+      shutdown_callback_(std::move(shutdown_callback)),
       error_reporter_(error_reporter),
       event_reporter_(event_reporter),
       resources_(error_reporter),
       weak_factory_(this) {
   FXL_DCHECK(engine);
+  FXL_DCHECK(shutdown_callback_);
   FXL_DCHECK(error_reporter);
 }
 
@@ -1580,7 +1583,7 @@ bool Session::ApplyScheduledUpdates(uint64_t presentation_time,
 
       scheduled_updates_ = {};
 
-      BeginTearDown();
+      shutdown_callback_();
 
       // Tearing down a session will very probably result in changes to
       // the global scene-graph.
@@ -1666,10 +1669,6 @@ void Session::HitTestDeviceRay(
       engine_->GetFirstCompositor()->layer_stack()->HitTest(ray, &hit_tester);
 
   callback(WrapHits(layer_stack_hits));
-}
-
-void Session::BeginTearDown() {
-  engine()->session_manager()->TearDownSession(id());
 }
 
 }  // namespace gfx

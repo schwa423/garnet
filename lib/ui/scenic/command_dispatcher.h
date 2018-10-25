@@ -40,8 +40,20 @@ class CommandDispatcher {
 
   CommandDispatcherContext* context() { return &context_; }
 
+  // Begin shutting down the Session that this CommandDispatcher belongs to, if
+  // it is not already shutting down.  This will cause OnPrepareForShutdown()
+  // to be called, followed by async destruction of the Session and all of its
+  // CommandDispatchers.
+  void ShutdownScenicSession();
+
  private:
+  friend class Scenic;
+  void PrepareForShutdown();
+  virtual void OnPrepareForShutdown() = 0;
+
   CommandDispatcherContext context_;
+  bool shutting_down_ = false;
+
   FXL_DISALLOW_COPY_AND_ASSIGN(CommandDispatcher);
 };
 

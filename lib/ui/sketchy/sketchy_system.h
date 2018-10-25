@@ -35,6 +35,9 @@ class SketchyCommandDispatcher : public CommandDispatcher {
   // |CommandDispatcher|
   void DispatchCommand(const fuchsia::ui::scenic::Command command) override;
 
+  // |CommandDispatcher|
+  void OnPrepareForShutdown() override;
+
  private:
   gfx::GfxSystem* const gfx_system_;
 };

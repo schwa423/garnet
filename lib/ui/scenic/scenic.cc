@@ -37,12 +37,43 @@ void Scenic::OnSystemInitialized(System* system) {
   }
 }
 
-void Scenic::CloseSession(Session* session) {
+void Scenic::ShutdownSession(Session* session) {
   for (auto& binding : session_bindings_.bindings()) {
     // It's possible that this is called by BindingSet::CloseAndCheckForEmpty.
     // In that case, binding could be empty, so check for that.
     if (binding && binding->impl().get() == session) {
+      // TODO(before-submit): This can't work because impl() returns a const&,
+      // which can't be moved into a new unique_ptr.  Store a shared_ptr
+      // instead?
+      td::unique_ptr<Session> session_ptr(std::move(binding->impl()));
+
+      // TODO(FIDL-344): also make sure that shutdown happens properly
+      // when zx::channel closes.  The bug description describes a possible
+      // BindingSet API which might make it easier to manage both
+      // client-initiated and server-initiated session teardown.
+      // TODO(SCN-1065): this doesn't actually remove the binding from the set;
+      // resources are effectively leaked.
       binding->Unbind();
+
+      // TODO(before-submit): PrepareForDestruction() ?
+      session_ptr->PrepareToShutdown();
+
+      async::PostTask(async_get_default_dispatcher(),
+                      [keepalive{std::move(session_ptr)}] {
+                        // This just keeps the Session alive.
+                        // TODO(before-submit): does this "do the job well
+                        // enough"?  Certainly the session needs to be kept
+                        // alive until the next event-loop tick, at least when
+                        // one of the sub-systems requested the shutdown because
+                        // we're at an arbitrary place in the sub-system's
+                        // call-stack.  However, if a sub-system has async tasks
+                        // underway which ref the Session, then keeping the
+                        // Session alive until the next tick might now be long
+                        // enough.  What are the alternatives?  Perhaps each
+                        // CommandDispatcher should return a future from
+                        // PrepareToShutdown(), and the Session is destroyed the
+                        // next tick after all futures have been resolved.
+                      });
       return;
     }
   }

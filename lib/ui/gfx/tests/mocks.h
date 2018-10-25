@@ -18,6 +18,7 @@ namespace test {
 class SessionForTest : public Session {
  public:
   SessionForTest(SessionId id, Engine* engine,
+                 fit::function<void()> shutdown_callback,
                  EventReporter* event_reporter = EventReporter::Default(),
                  ErrorReporter* error_reporter = ErrorReporter::Default());
 

@@ -383,11 +383,14 @@ void InputCommandDispatcher::DispatchCommand(
   }
 }
 
-void InputCommandDispatcher::DispatchCommand(const SetParallelDispatchCmd command) {
+void InputCommandDispatcher::DispatchCommand(
+    const SetParallelDispatchCmd command) {
   FXL_LOG(INFO) << "Scenic: Parallel dispatch is turned "
                 << (command.parallel_dispatch ? "ON" : "OFF");
   parallel_dispatch_ = command.parallel_dispatch;
 }
+
+void InputCommandDispatcher::OnPrepareForShutdown() {}
 
 void InputCommandDispatcher::EnqueueEventToView(GlobalId view_id,
                                                 FocusEvent focus) {

@@ -90,6 +90,8 @@ class Session final : public fuchsia::ui::scenic::Session,
     error_callback_ = std::move(callback);
   }
 
+  void PrepareToShutdown();
+
  private:
   // Post an asynchronous task to call FlushEvents.
   void PostFlushTask();

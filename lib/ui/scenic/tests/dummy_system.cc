@@ -25,5 +25,7 @@ DummyCommandDispatcher::~DummyCommandDispatcher() = default;
 void DummyCommandDispatcher::DispatchCommand(
     fuchsia::ui::scenic::Command command) {}
 
+void DummyCommandDispatcher::OnPrepareForShutdown() {}
+
 }  // namespace test
 }  // namespace scenic_impl

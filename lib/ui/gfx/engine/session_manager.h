@@ -60,7 +60,7 @@ class SessionManager {
   friend class SessionHandler;
 
   // Destroys the session with the given id.
-  void TearDownSession(SessionId id);
+  void UnregisterSession(SessionId id);
 
   virtual std::unique_ptr<SessionHandler> CreateSessionHandler(
       CommandDispatcherContext context, Engine* engine, SessionId session_id,

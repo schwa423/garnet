@@ -57,16 +57,11 @@ class SessionHandler : public TempSessionDelegate {
   // |scenic::CommandDispatcher|
   void DispatchCommand(fuchsia::ui::scenic::Command command) override;
 
+  // |CommandDispatcher|
+  void OnPrepareForShutdown() override;
+
  private:
   friend class SessionManager;
-
-  // Called by |binding_| when the connection closes. Must be invoked within
-  // the SessionHandler MessageLoop.
-  void BeginTearDown();
-
-  // Called only by Engine. Use BeginTearDown() instead when you need to
-  // teardown from within SessionHandler.
-  void TearDown();
 
   SessionManager* const session_manager_;
 

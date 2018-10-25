@@ -12,8 +12,8 @@ namespace test {
 
 void SessionTest::SetUp() {
   engine_ = std::unique_ptr<Engine>(CreateEngine());
-  session_ = fxl::MakeRefCounted<SessionForTest>(1, engine_.get(), this,
-                                                 error_reporter());
+  session_ = fxl::MakeRefCounted<SessionForTest>(1, engine_.get(), [this]() {},
+                                                 this, error_reporter());
 }
 
 void SessionTest::TearDown() {

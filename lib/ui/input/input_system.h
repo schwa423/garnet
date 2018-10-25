@@ -68,6 +68,9 @@ class InputCommandDispatcher : public CommandDispatcher {
   // |CommandDispatcher|
   void DispatchCommand(const fuchsia::ui::scenic::Command command) override;
 
+  // |CommandDispatcher|
+  void OnPrepareForShutdown() override;
+
  private:
   // Per-command dispatch logic.
   void DispatchCommand(const fuchsia::ui::input::SendPointerInputCmd command);
@@ -78,7 +81,8 @@ class InputCommandDispatcher : public CommandDispatcher {
       const fuchsia::ui::input::SetParallelDispatchCmd command);
 
   // Enqueue the focus event into the view's SessionListener.
-  void EnqueueEventToView(GlobalId view_id, fuchsia::ui::input::FocusEvent focus);
+  void EnqueueEventToView(GlobalId view_id,
+                          fuchsia::ui::input::FocusEvent focus);
 
   // Enqueue the pointer event into the view's SessionListener.
   void EnqueueEventToView(GlobalId view_id,

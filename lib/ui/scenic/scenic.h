@@ -32,9 +32,6 @@ class Scenic : public fuchsia::ui::scenic::Scenic {
   template <typename SystemT, typename... Args>
   SystemT* RegisterSystem(Args&&... args);
 
-  // Called by Session when it needs to close itself.
-  void CloseSession(Session* session);
-
   // |fuchsia::ui::scenic::Scenic|
   void CreateSession(
       ::fidl::InterfaceRequest<fuchsia::ui::scenic::Session> session,
@@ -46,6 +43,10 @@ class Scenic : public fuchsia::ui::scenic::Scenic {
   size_t num_sessions() { return session_bindings_.size(); }
 
  private:
+  // Called by any CommandDispatcher in a Session.
+  friend class CommandDispatcher;
+  void ShutdownSession(Session* session);
+
   void CreateSessionImmediately(
       ::fidl::InterfaceRequest<fuchsia::ui::scenic::Session> session_request,
       ::fidl::InterfaceHandle<fuchsia::ui::scenic::SessionListener> listener);

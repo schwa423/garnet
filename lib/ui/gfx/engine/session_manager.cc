@@ -78,19 +78,13 @@ bool SessionManager::ApplyScheduledSessionUpdates(
   return needs_render;
 }
 
-void SessionManager::TearDownSession(SessionId id) {
+void SessionManager::UnregisterSession(SessionId id) {
   auto it = session_manager_.find(id);
   FXL_DCHECK(it != session_manager_.end());
   if (it != session_manager_.end()) {
-    SessionHandler* handler = std::move(it->second);
     session_manager_.erase(it);
     FXL_DCHECK(session_count_ > 0);
     --session_count_;
-
-    // Don't destroy handler immediately, since it may be the one calling
-    // TearDownSession().
-    async::PostTask(async_get_default_dispatcher(),
-                    [handler] { handler->TearDown(); });
   }
 }
 

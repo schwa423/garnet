@@ -19,11 +19,12 @@ SessionHandler::SessionHandler(CommandDispatcherContext dispatcher_context,
       event_reporter_(event_reporter),
       error_reporter_(error_reporter),
       session_(::fxl::MakeRefCounted<scenic_impl::gfx::Session>(
-          session_id, engine, event_reporter, error_reporter)) {
+          session_id, engine, [this]() { this->ShutdownScenicSession(); },
+          event_reporter, error_reporter)) {
   FXL_DCHECK(engine);
 }
 
-SessionHandler::~SessionHandler() { TearDown(); }
+SessionHandler::~SessionHandler() = default;
 
 void SessionHandler::Present(
     uint64_t presentation_time, ::fidl::VectorPtr<zx::event> acquire_fences,
@@ -33,7 +34,7 @@ void SessionHandler::Present(
           presentation_time, std::move(buffered_commands_),
           std::move(acquire_fences), std::move(release_fences),
           std::move(callback))) {
-    BeginTearDown();
+    ShutdownScenicSession();
   }
   buffered_commands_.clear();
 }
@@ -58,18 +59,9 @@ void SessionHandler::DispatchCommand(fuchsia::ui::scenic::Command command) {
   buffered_commands_.emplace_back(std::move(command.gfx()));
 }
 
-void SessionHandler::BeginTearDown() {
-  session_manager_->TearDownSession(session_->id());
-  FXL_DCHECK(!session_->is_valid());
-}
-
-void SessionHandler::TearDown() {
+void SessionHandler::OnPrepareForShutdown() {
+  session_manager_->UnregisterSession(session_->id());
   session_->TearDown();
-
-  // Close the parent Mozart session.
-  if (context() && context()->session()) {
-    context()->scenic()->CloseSession(context()->session());
-  }
 }
 
 }  // namespace gfx

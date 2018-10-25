@@ -11,9 +11,11 @@ namespace gfx {
 namespace test {
 
 SessionForTest::SessionForTest(SessionId id, Engine* engine,
+                               fit::function<void()> shutdown_callback,
                                EventReporter* event_reporter,
                                ErrorReporter* error_reporter)
-    : Session(id, engine, event_reporter, error_reporter) {}
+    : Session(id, engine, std::move(shutdown_callback), event_reporter,
+              error_reporter) {}
 
 void SessionForTest::TearDown() { Session::TearDown(); }
 

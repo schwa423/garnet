@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <fuchsia/ui/gfx/cpp/fidl.h>
+#include <lib/fit/function.h>
 
 #include "garnet/lib/ui/gfx/engine/engine.h"
 #include "garnet/lib/ui/gfx/engine/resource_map.h"
@@ -42,7 +43,9 @@ class SessionHandler;
 // guarantees that this is safe).
 class Session : public fxl::RefCountedThreadSafe<Session> {
  public:
-  Session(SessionId id, Engine* engine,
+  // |shutdown_callback| is called by this session in order to request shutdown
+  // of the enclosing Scenic session.
+  Session(SessionId id, Engine* engine, fit::function<void()> shutdown_callback,
           EventReporter* event_reporter = EventReporter::Default(),
           ErrorReporter* error_reporter = ErrorReporter::Default());
   virtual ~Session();
@@ -330,6 +333,7 @@ class Session : public fxl::RefCountedThreadSafe<Session> {
 
   const SessionId id_;
   Engine* const engine_;
+  fit::function<void()> shutdown_callback_;
   ErrorReporter* error_reporter_ = nullptr;
   EventReporter* event_reporter_ = nullptr;
 

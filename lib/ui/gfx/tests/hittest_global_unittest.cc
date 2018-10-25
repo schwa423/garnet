@@ -47,7 +47,7 @@ class CustomSession {
  public:
   CustomSession(SessionId id, Engine* engine) {
     FXL_CHECK(engine);
-    session_ = fxl::MakeRefCounted<SessionForTest>(id, engine);
+    session_ = fxl::MakeRefCounted<SessionForTest>(id, engine, [this]() {});
   }
 
   ~CustomSession() {
